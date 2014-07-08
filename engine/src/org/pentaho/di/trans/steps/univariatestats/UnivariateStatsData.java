@@ -22,13 +22,16 @@
 
 package org.pentaho.di.trans.steps.univariatestats;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 /**
  * Holds temporary data and has routines for computing derived statistics.
- *
+ * 
  * @author Mark Hall (mhall{[at]}pentaho.org)
  * @version 1.0
  */
@@ -47,7 +50,7 @@ public class UnivariateStatsData extends BaseStepData implements StepDataInterfa
   /**
    * contains the FieldIndexs - one for each UnivariateStatsMetaFunction
    */
-  protected FieldIndex[] m_indexes;
+  protected List<FieldIndex> m_indexes = new ArrayList<FieldIndex>();
 
   /**
    * Creates a new <code>UnivariateStatsData</code> instance.
@@ -58,26 +61,30 @@ public class UnivariateStatsData extends BaseStepData implements StepDataInterfa
 
   /**
    * Set the FieldIndexes
-   *
+   * 
    * @param fis
    *          a <code>FieldIndex[]</code> value
    */
-  public void setFieldIndexes( FieldIndex[] fis ) {
+  public void setFieldIndexes( List<FieldIndex> fis ) {
     m_indexes = fis;
   }
 
   /**
    * Get the fieldIndexes
-   *
+   * 
    * @return a <code>FieldIndex[]</code> value
    */
-  public FieldIndex[] getFieldIndexes() {
+  public List<FieldIndex> getFieldIndexes() {
     return m_indexes;
+  }
+
+  public FieldIndex getFieldIndex( int index ) {
+    return m_indexes.get( index );
   }
 
   /**
    * Get the meta data for the input format
-   *
+   * 
    * @return a <code>RowMetaInterface</code> value
    */
   public RowMetaInterface getInputRowMeta() {
@@ -86,7 +93,7 @@ public class UnivariateStatsData extends BaseStepData implements StepDataInterfa
 
   /**
    * Save the meta data for the input format. (I'm not sure that this is really needed)
-   *
+   * 
    * @param rmi
    *          a <code>RowMetaInterface</code> value
    */
@@ -96,7 +103,7 @@ public class UnivariateStatsData extends BaseStepData implements StepDataInterfa
 
   /**
    * Get the meta data for the output format
-   *
+   * 
    * @return a <code>RowMetaInterface</code> value
    */
   public RowMetaInterface getOutputRowMeta() {
@@ -105,11 +112,15 @@ public class UnivariateStatsData extends BaseStepData implements StepDataInterfa
 
   /**
    * Set the meta data for the output format
-   *
+   * 
    * @param rmi
    *          a <code>RowMetaInterface</code> value
    */
   public void setOutputRowMeta( RowMetaInterface rmi ) {
     m_outputRowMeta = rmi;
+  }
+
+  public void clearFieldIndexes() {
+    m_indexes = new ArrayList<FieldIndex>();
   }
 }

@@ -22,7 +22,6 @@
 
 package org.pentaho.di.trans.steps.univariatestats;
 
-import java.text.NumberFormat;
 import java.util.List;
 
 import org.pentaho.di.core.CheckResult;
@@ -30,11 +29,10 @@ import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMeta;
-import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.repository.ObjectId;
@@ -230,79 +228,15 @@ public class UnivariateStatsMeta extends BaseStepMeta implements StepMetaInterfa
       VariableSpace space, Repository repository, IMetaStore metaStore ) throws KettleStepException {
 
     row.clear();
-    for ( int i = 0; i < m_stats.length; i++ ) {
-      UnivariateStatsMetaFunction fn = m_stats[i];
-
-      ValueMetaInterface[] vmis = getValueMetas( fn, origin );
-
-      for ( int j = 0; j < vmis.length; j++ ) {
-        row.addValueMeta( vmis[j] );
+    for ( UnivariateStatsMetaFunction fn : m_stats ) {
+      for ( UnivariateStatsValueProducer univariateStatsValueProducer : fn.getRequestedValues() ) {
+        try {
+          row.addValueMeta( univariateStatsValueProducer.getOutputValueMeta() );
+        } catch ( KettlePluginException e ) {
+          throw new KettleStepException( e );
+        }
       }
     }
-  }
-
-  /**
-   * Returns an array of ValueMetaInterface that contains the meta data for each value computed by the supplied
-   * UnivariateStatsMetaFunction
-   * 
-   * @param fn
-   *          the <code>UnivariateStatsMetaFunction</code> to construct meta data for
-   * @param origin
-   *          the origin
-   * @return an array of meta data
-   */
-  private ValueMetaInterface[] getValueMetas( UnivariateStatsMetaFunction fn, String origin ) {
-
-    ValueMetaInterface[] v = new ValueMetaInterface[fn.numberOfMetricsRequested()];
-
-    int index = 0;
-    if ( fn.getCalcN() ) {
-      v[index] = new ValueMeta( fn.getSourceFieldName() + "(N)", ValueMetaInterface.TYPE_NUMBER );
-      v[index].setOrigin( origin );
-      index++;
-    }
-
-    if ( fn.getCalcMean() ) {
-      v[index] = new ValueMeta( fn.getSourceFieldName() + "(mean)", ValueMetaInterface.TYPE_NUMBER );
-      v[index].setOrigin( origin );
-      index++;
-    }
-
-    if ( fn.getCalcStdDev() ) {
-      v[index] = new ValueMeta( fn.getSourceFieldName() + "(stdDev)", ValueMetaInterface.TYPE_NUMBER );
-      v[index].setOrigin( origin );
-      index++;
-    }
-
-    if ( fn.getCalcMin() ) {
-      v[index] = new ValueMeta( fn.getSourceFieldName() + "(min)", ValueMetaInterface.TYPE_NUMBER );
-      v[index].setOrigin( origin );
-      index++;
-    }
-
-    if ( fn.getCalcMax() ) {
-      v[index] = new ValueMeta( fn.getSourceFieldName() + "(max)", ValueMetaInterface.TYPE_NUMBER );
-      v[index].setOrigin( origin );
-      index++;
-    }
-
-    if ( fn.getCalcMedian() ) {
-      v[index] = new ValueMeta( fn.getSourceFieldName() + "(median)", ValueMetaInterface.TYPE_NUMBER );
-      v[index].setOrigin( origin );
-      index++;
-    }
-
-    if ( fn.getCalcPercentile() >= 0 ) {
-      double percent = fn.getCalcPercentile();
-      // NumberFormat pF = NumberFormat.getPercentInstance();
-      NumberFormat pF = NumberFormat.getInstance();
-      pF.setMaximumFractionDigits( 2 );
-      String res = pF.format( percent * 100 );
-      v[index] = new ValueMeta( fn.getSourceFieldName() + "(" + res + "th percentile)", ValueMetaInterface.TYPE_NUMBER );
-      v[index].setOrigin( origin );
-      index++;
-    }
-    return v;
   }
 
   /**
@@ -380,6 +314,6 @@ public class UnivariateStatsMeta extends BaseStepMeta implements StepMetaInterfa
    */
   @Override
   public StepDataInterface getStepData() {
-    return new UnivariateStatsData();
+    return new UnivariateStatsData( );
   }
 }

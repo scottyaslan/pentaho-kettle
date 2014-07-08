@@ -24,6 +24,9 @@ package org.pentaho.di.trans.steps.univariatestats;
 
 import static org.mockito.Mockito.mock;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.test.util.GetterSetterTester;
@@ -35,8 +38,8 @@ public class UnivariateStatsDataTest {
     GetterSetterTester<UnivariateStatsData> getterSetterTester =
         new GetterSetterTester<UnivariateStatsData>( UnivariateStatsData.class );
 
-    getterSetterTester.addObjectTester( "fieldIndexes", new ObjectTesterBuilder<FieldIndex[]>().addObject( null )
-        .addObject( new FieldIndex[] {} ).useEqualsEquals().build() );
+    getterSetterTester.addObjectTester( "fieldIndexes", new ObjectTesterBuilder<List<FieldIndex>>().addObject( null )
+        .addObject( new ArrayList<FieldIndex>() ).useEqualsEquals().build() );
     RowMetaInterface mockRowMetaInterface = mock( RowMetaInterface.class );
 
     getterSetterTester.addObjectTester( "inputRowMeta", new ObjectTesterBuilder<RowMetaInterface>().addObject( null )
