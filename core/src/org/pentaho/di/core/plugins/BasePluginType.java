@@ -23,7 +23,10 @@
 package org.pentaho.di.core.plugins;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
@@ -34,11 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.vfs.FileObject;
 import org.apache.commons.vfs.FileSelectInfo;
 import org.apache.commons.vfs.FileSelector;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettlePluginException;
+import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.logging.DefaultLogLevel;
 import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.logging.LogLevel;
@@ -47,6 +52,7 @@ import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.i18n.LanguageChoice;
 import org.scannotation.AnnotationDB;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 public abstract class BasePluginType implements PluginTypeInterface {
@@ -122,7 +128,65 @@ public abstract class BasePluginType implements PluginTypeInterface {
 
   protected abstract void registerNatives() throws KettlePluginException;
 
-  protected abstract void registerXmlPlugins() throws KettlePluginException;
+  protected final void registerNativesDefault( String kettlePluginsXmlFile, String setTag,
+      String entryTag ) throws KettlePluginException {
+    // Load the plugins for this file...
+    try {
+      InputStream inputStream = getClass().getResourceAsStream( kettlePluginsXmlFile );
+      if ( inputStream == null ) {
+        inputStream = getClass().getResourceAsStream( "/" + kettlePluginsXmlFile );
+      }
+      // Retry to load a regular file...
+      if ( inputStream == null && !Const.isEmpty( kettlePluginsXmlFile ) ) {
+        try {
+          inputStream = new FileInputStream( kettlePluginsXmlFile );
+        } catch ( Exception e ) {
+          throw new KettlePluginException( "Unable to load native " + getName() + " plugins '"
+              + kettlePluginsXmlFile + "'", e );
+        }
+      }
+      if ( inputStream == null ) {
+        throw new KettlePluginException( "Unable to find native value meta plugins definition file: "
+            + kettlePluginsXmlFile );
+      }
+      Document document = XMLHandler.loadXMLFile( inputStream, null, true, false );
+
+      // Document document = XMLHandler.loadXMLFile(kettleStepsXmlFile);
+
+      Node stepsNode = XMLHandler.getSubNode( document, setTag );
+      List<Node> stepNodes = XMLHandler.getNodes( stepsNode, entryTag );
+      for ( Node stepNode : stepNodes ) {
+        registerPluginFromXmlResource( stepNode, null, this.getClass(), true, null );
+      }
+
+    } catch ( KettleXMLException e ) {
+      throw new KettlePluginException( "Unable to read the kettle metadata plugins XML config file: "
+          + kettlePluginsXmlFile, e );
+    }
+  }
+
+  protected void registerXmlPlugins() throws KettlePluginException {
+    for ( PluginFolderInterface folder : pluginFolders ) {
+
+      if ( folder.isPluginXmlFolder() ) {
+        List<FileObject> pluginXmlFiles = findPluginXmlFiles( folder.getFolder() );
+        for ( FileObject file : pluginXmlFiles ) {
+
+          try {
+            Document document = XMLHandler.loadXMLFile( file );
+            Node pluginNode = XMLHandler.getSubNode( document, "plugin" );
+            if ( pluginNode != null ) {
+              registerPluginFromXmlResource( pluginNode, KettleVFS.getFilename( file.getParent() ), this
+                .getClass(), false, file.getParent().getURL() );
+            }
+          } catch ( Exception e ) {
+            // We want to report this plugin.xml error, perhaps an XML typo or something like that...
+            log.logError( "Error found while reading step plugin.xml file: " + file.getName().toString(), e );
+          }
+        }
+      }
+    }
+  }
 
   /**
    * @return the id
@@ -517,28 +581,71 @@ public abstract class BasePluginType implements PluginTypeInterface {
     return new KettleURLClassLoader( urls.toArray( new URL[urls.size()] ), classLoader );
   }
 
-  protected abstract String extractID( java.lang.annotation.Annotation annotation );
+  @SuppressWarnings( "unchecked" )
+  private <Type> Type getAnnotationValue( Annotation annotation, String methodName, Class<Type> type ) throws KettlePluginException {
+    Object result = null;
+    try {
+      Method getValueMethod = annotation.getClass().getMethod( methodName );
+      result = getValueMethod.invoke( annotation );
+    } catch ( NoSuchMethodException e ) {
+      return null;
+    } catch ( Exception e ) {
+      throw new KettlePluginException( e );
+    }
+    Class<?> objectType = ClassUtils.primitiveToWrapper( type );
+    if ( objectType == null ) {
+      objectType = type;
+    }
+    if ( result == null || objectType.isInstance( result ) ) {
+      return (Type) result;
+    }
+    throw new KettlePluginException( "Expected result of type " + type.getCanonicalName() + " from "
+        + annotation.getClass().getCanonicalName() + "." + methodName + "() but got "
+        + result.getClass().getCanonicalName() );
+  }
 
-  protected abstract String extractName( java.lang.annotation.Annotation annotation );
+  protected String extractID( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "id", String.class );
+  }
 
-  protected abstract String extractDesc( java.lang.annotation.Annotation annotation );
+  protected String extractName( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "name", String.class );
+  }
 
-  protected abstract String extractCategory( java.lang.annotation.Annotation annotation );
+  protected String extractDesc( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "description", String.class );
+  }
 
-  protected abstract String extractImageFile( java.lang.annotation.Annotation annotation );
+  protected String extractCategory( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "categoryDescription", String.class );
+  }
 
-  protected abstract boolean extractSeparateClassLoader( java.lang.annotation.Annotation annotation );
+  protected String extractImageFile( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "image", String.class );
+  }
 
-  protected abstract String extractI18nPackageName( java.lang.annotation.Annotation annotation );
+  protected boolean extractSeparateClassLoader( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "isSeparateClassLoaderNeeded", boolean.class );
+  }
 
-  protected abstract String extractDocumentationUrl( java.lang.annotation.Annotation annotation );
+  protected String extractI18nPackageName( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "i18nPackageName", String.class );
+  }
 
-  protected abstract String extractCasesUrl( java.lang.annotation.Annotation annotation );
+  protected String extractDocumentationUrl( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "documentationUrl", String.class );
+  }
 
-  protected abstract String extractForumUrl( java.lang.annotation.Annotation annotation );
+  protected String extractCasesUrl( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "casesUrl", String.class );
+  }
 
-  protected String extractClassLoaderGroup( java.lang.annotation.Annotation annotation ) {
-    return null;
+  protected String extractForumUrl( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "forumUrl", String.class );
+  }
+
+  protected String extractClassLoaderGroup( java.lang.annotation.Annotation annotation ) throws KettlePluginException {
+    return getAnnotationValue( annotation, "classLoaderGroup", String.class );
   }
 
   /**
@@ -691,5 +798,7 @@ public abstract class BasePluginType implements PluginTypeInterface {
    * @param clazz
    * @param annotation
    */
-  protected abstract void addExtraClasses( Map<Class<?>, String> classMap, Class<?> clazz, Annotation annotation );
+  protected void addExtraClasses( Map<Class<?>, String> classMap, Class<?> clazz, Annotation annotation ) {
+
+  }
 }

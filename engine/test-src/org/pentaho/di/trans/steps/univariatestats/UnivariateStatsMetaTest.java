@@ -196,7 +196,7 @@ public class UnivariateStatsMetaTest {
     }
     for ( UnivariateStatsMetaFunction function : functions ) {
       if ( function.getCalcN() ) {
-        assertContains( valueMetas, function.getSourceFieldName() + "(N)", ValueMetaInterface.TYPE_NUMBER );
+        assertContains( valueMetas, function.getSourceFieldName() + "(N)", ValueMetaInterface.TYPE_INTEGER );
       }
       if ( function.getCalcMean() ) {
         assertContains( valueMetas, function.getSourceFieldName() + "(mean)", ValueMetaInterface.TYPE_NUMBER );

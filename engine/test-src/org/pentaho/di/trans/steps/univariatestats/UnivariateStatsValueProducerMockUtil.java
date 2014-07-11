@@ -8,10 +8,10 @@ import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.ValueMetaInterface;
 
 public class UnivariateStatsValueProducerMockUtil {
-  public static UnivariateStatsValueProducer mockProducer( Double number ) throws KettlePluginException,
+  public static UnivariateStatsValueProcessor mockProducer( Double number ) throws KettlePluginException,
     KettleValueException {
     Object testObj = new Object();
-    UnivariateStatsValueProducer mockProducer = mock( UnivariateStatsValueProducer.class );
+    UnivariateStatsValueProcessor mockProducer = mock( UnivariateStatsValueProcessor.class );
     ValueMetaInterface mockValueMetaInterface = mock( ValueMetaInterface.class );
     when( mockProducer.getOutputValueMeta() ).thenReturn( mockValueMetaInterface );
     when( mockProducer.getValue() ).thenReturn( testObj );

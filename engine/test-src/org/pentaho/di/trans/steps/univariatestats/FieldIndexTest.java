@@ -32,17 +32,26 @@ import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.value.ValueMetaNumber;
 import org.pentaho.di.core.row.value.ValueMetaPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.MeanValueCalculator;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.StandardDeviationCalculator;
 
 public class FieldIndexTest {
   @BeforeClass
   public static void beforeClass() throws KettlePluginException {
     ValueMetaPluginType.getInstance().searchPlugins();
+    UnivariateValueProcessorPluginType.getInstance().searchPlugins();
+    UnivariateValueCalculatorPluginType.getInstance().searchPlugins();
   }
 
   @Test
   public void testCalculateDerived0Count() throws KettleStepException, KettleValueException, KettlePluginException {
-    FieldIndex fieldIndex =
-        new FieldIndex( new UnivariateStatsMetaFunction( "test", false, true, true, false, false, false, -1, false ), 1 );
+    UnivariateStatsMetaFunction function =
+        new UnivariateStatsMetaFunction( "test", false, true, true, false, false, false, -1, false );
+    function.addConfig( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
+    function.addConfig( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
+    FieldIndex fieldIndex = new FieldIndex( function, 1 );
     // Should be only mean and stdev
     Object[] output = fieldIndex.generateOutputValues();
     assertEquals( 2, output.length );
@@ -52,8 +61,11 @@ public class FieldIndexTest {
 
   @Test
   public void testCalculateDerived1Count() throws KettleException {
-    FieldIndex fieldIndex =
-        new FieldIndex( new UnivariateStatsMetaFunction( "test", false, true, true, false, false, false, -1, false ), 1 );
+    UnivariateStatsMetaFunction function =
+        new UnivariateStatsMetaFunction( "test", false, true, true, false, false, false, -1, false );
+    function.addConfig( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
+    function.addConfig( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
+    FieldIndex fieldIndex = new FieldIndex( function, 1 );
     fieldIndex.processEntry( new ValueMetaNumber(), 250.0 );
     // Should be only mean and stdev
     Object[] output = fieldIndex.generateOutputValues();
@@ -64,8 +76,11 @@ public class FieldIndexTest {
 
   @Test
   public void testCalculateDerived3CountPositiveStdDev() throws KettleException {
-    FieldIndex fieldIndex =
-        new FieldIndex( new UnivariateStatsMetaFunction( "test", false, true, true, false, false, false, -1, false ), 1 );
+    UnivariateStatsMetaFunction function =
+        new UnivariateStatsMetaFunction( "test", false, true, true, false, false, false, -1, false );
+    function.addConfig( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
+    function.addConfig( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
+    FieldIndex fieldIndex = new FieldIndex( function, 1 );
     fieldIndex.processEntry( new ValueMetaNumber(), 250.0 );
     fieldIndex.processEntry( new ValueMetaNumber(), 120.0 );
     fieldIndex.processEntry( new ValueMetaNumber(), 280.0 );

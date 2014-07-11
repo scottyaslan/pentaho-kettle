@@ -22,10 +22,10 @@
 
 package org.pentaho.di.trans.steps.univariatestats;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
+import org.json.simple.JSONObject;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.exception.KettleStepException;
@@ -42,17 +42,19 @@ import org.pentaho.di.core.row.ValueMetaInterface;
 public class FieldIndex {
   public final int m_columnIndex;
   private final List<UnivariateStatsValueProducer> valueProducers;
-  private final List<UnivariateStatsValueProcessor> valueProcessors;
+  private final Map<String, UnivariateStatsValueProcessor> valueProcessors;
+  private final String origin;
 
   public FieldIndex( UnivariateStatsMetaFunction univariateStatsMetaFunction, int columnIndex )
     throws KettleStepException {
+    this.origin = univariateStatsMetaFunction.getSourceFieldName();
     valueProducers = univariateStatsMetaFunction.getRequestedValues();
     valueProcessors = univariateStatsMetaFunction.getProcessors( valueProducers );
     this.m_columnIndex = columnIndex;
   }
 
   public void processEntry( ValueMetaInterface inputMeta, Object input ) throws KettleException {
-    for ( UnivariateStatsValueProcessor valueProcessor : valueProcessors ) {
+    for ( UnivariateStatsValueProcessor valueProcessor : valueProcessors.values() ) {
       valueProcessor.process( inputMeta, input );
     }
   }
@@ -74,16 +76,28 @@ public class FieldIndex {
    * @throws KettleValueException
    */
   public Object[] generateOutputValues() throws KettleStepException, KettleValueException, KettlePluginException {
-    Set<UnivariateStatsValueProducer> producers = new HashSet<UnivariateStatsValueProducer>( valueProcessors );
-    producers.addAll( valueProcessors );
     Object[] result = new Object[valueProducers.size()];
     int index = 0;
     for ( UnivariateStatsValueProducer producer : valueProducers ) {
       if ( producer instanceof UnivariateStatsValueCalculator ) {
-        ( (UnivariateStatsValueCalculator) producer ).process( producers );
+        ( (UnivariateStatsValueCalculator) producer ).process( valueProcessors );
       }
       result[index++] = producer.getValue();
     }
     return result;
+  }
+
+  @SuppressWarnings( "unchecked" )
+  public JSONObject generateOutputValue() throws KettleStepException, KettleValueException, KettlePluginException {
+    JSONObject topLevelObject = new JSONObject();
+    JSONObject object = new JSONObject();
+    topLevelObject.put( origin, object );
+    for ( UnivariateStatsValueProducer producer : valueProducers ) {
+      if ( producer instanceof UnivariateStatsValueCalculator ) {
+        ( (UnivariateStatsValueCalculator) producer ).process( valueProcessors );
+      }
+      object.put( producer.getName(), producer.getValue() );
+    }
+    return topLevelObject;
   }
 }

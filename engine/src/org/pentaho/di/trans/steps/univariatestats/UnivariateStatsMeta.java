@@ -33,6 +33,8 @@ import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.pentaho.di.core.variables.VariableSpace;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.repository.ObjectId;
@@ -58,6 +60,7 @@ public class UnivariateStatsMeta extends BaseStepMeta implements StepMetaInterfa
   // The stats to be computed for various input fields.
   // User may elect to omit some stats for particular fields.
   private UnivariateStatsMetaFunction[] m_stats;
+  private boolean jsonOutput = false;
 
   /**
    * Creates a new <code>UnivariateStatsMeta</code> instance.
@@ -104,6 +107,14 @@ public class UnivariateStatsMeta extends BaseStepMeta implements StepMetaInterfa
    */
   public void allocate( int nrStats ) {
     m_stats = new UnivariateStatsMetaFunction[nrStats];
+  }
+
+  public boolean isJsonOutput() {
+    return jsonOutput;
+  }
+
+  public void setJsonOutput( boolean jsonOutput ) {
+    this.jsonOutput = jsonOutput;
   }
 
   /**
@@ -228,12 +239,20 @@ public class UnivariateStatsMeta extends BaseStepMeta implements StepMetaInterfa
       VariableSpace space, Repository repository, IMetaStore metaStore ) throws KettleStepException {
 
     row.clear();
-    for ( UnivariateStatsMetaFunction fn : m_stats ) {
-      for ( UnivariateStatsValueProducer univariateStatsValueProducer : fn.getRequestedValues() ) {
-        try {
-          row.addValueMeta( univariateStatsValueProducer.getOutputValueMeta() );
-        } catch ( KettlePluginException e ) {
-          throw new KettleStepException( e );
+    if ( isJsonOutput() ) {
+      try {
+        row.addValueMeta( ValueMetaFactory.createValueMeta( "Univariate Stats", ValueMetaInterface.TYPE_STRING ) );
+      } catch ( KettlePluginException e ) {
+        throw new KettleStepException( e );
+      }
+    } else {
+      for ( UnivariateStatsMetaFunction fn : m_stats ) {
+        for ( UnivariateStatsValueProducer univariateStatsValueProducer : fn.getRequestedValues() ) {
+          try {
+            row.addValueMeta( univariateStatsValueProducer.getOutputValueMeta() );
+          } catch ( KettlePluginException e ) {
+            throw new KettleStepException( e );
+          }
         }
       }
     }
@@ -314,6 +333,6 @@ public class UnivariateStatsMeta extends BaseStepMeta implements StepMetaInterfa
    */
   @Override
   public StepDataInterface getStepData() {
-    return new UnivariateStatsData( );
+    return new UnivariateStatsData();
   }
 }

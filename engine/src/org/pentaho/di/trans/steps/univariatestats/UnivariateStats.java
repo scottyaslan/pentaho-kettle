@@ -25,6 +25,7 @@ package org.pentaho.di.trans.steps.univariatestats;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.simple.JSONObject;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettlePluginException;
@@ -157,7 +158,7 @@ public class UnivariateStats extends BaseStep implements StepInterface {
 
     for ( FieldIndex tempData : m_data.getFieldIndexes() ) {
       ValueMetaInterface metaI = getInputRowMeta().getValueMeta( tempData.m_columnIndex );
-      tempData.processEntry( metaI, metaI.getNumber( r[tempData.m_columnIndex] ) );
+      tempData.processEntry( metaI, r[tempData.m_columnIndex] );
     }
 
     if ( log.isRowLevel() ) {
@@ -178,6 +179,7 @@ public class UnivariateStats extends BaseStep implements StepInterface {
    * @throws KettlePluginException
    * @throws KettleValueException
    */
+  @SuppressWarnings( "unchecked" )
   private Object[] generateOutputRow() throws KettleStepException, KettleValueException, KettlePluginException {
     int totalNumOutputFields = 0;
 
@@ -185,13 +187,23 @@ public class UnivariateStats extends BaseStep implements StepInterface {
       totalNumOutputFields += fieldIndex.getNumFields();
     }
 
-    Object[] result = new Object[totalNumOutputFields];
-    int index = 0;
-    for ( FieldIndex fieldIndex : m_data.getFieldIndexes() ) {
-      Object[] tempOut = fieldIndex.generateOutputValues();
+    final Object[] result;
+    if ( m_meta.isJsonOutput() ) {
+      result = new Object[1];
+      JSONObject topLevelObject = new JSONObject();
+      for ( FieldIndex fieldIndex : m_data.getFieldIndexes() ) {
+        topLevelObject.putAll( fieldIndex.generateOutputValue() );
+      }
+      result[1] = topLevelObject.toJSONString();
+    } else {
+      result = new Object[totalNumOutputFields];
+      int index = 0;
+      for ( FieldIndex fieldIndex : m_data.getFieldIndexes() ) {
+        Object[] tempOut = fieldIndex.generateOutputValues();
 
-      for ( int j = 0; j < tempOut.length; j++ ) {
-        result[index++] = tempOut[j];
+        for ( int j = 0; j < tempOut.length; j++ ) {
+          result[index++] = tempOut[j];
+        }
       }
     }
 

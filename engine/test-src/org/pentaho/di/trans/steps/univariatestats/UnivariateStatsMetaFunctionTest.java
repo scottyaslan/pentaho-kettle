@@ -32,20 +32,33 @@ import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
 import org.json.simple.parser.ParseException;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.exception.KettleXMLException;
+import org.pentaho.di.core.row.value.ValueMetaPluginType;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.steps.loadsave.MemoryRepository;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPluginType;
 import org.pentaho.test.util.GetterSetterTester;
 import org.pentaho.test.util.ObjectTester;
 import org.pentaho.test.util.ObjectTesterBuilder;
 import org.pentaho.test.util.ObjectValidator;
 
 public class UnivariateStatsMetaFunctionTest {
+
+  @BeforeClass
+  public static void beforeClass() throws KettlePluginException {
+    ValueMetaPluginType.getInstance().searchPlugins();
+    UnivariateValueProcessorPluginType.getInstance().searchPlugins();
+    UnivariateValueCalculatorPluginType.getInstance().searchPlugins();
+  }
+
   @Test
   public void testValuesConstructor() {
     UnivariateStatsMetaFunction function =

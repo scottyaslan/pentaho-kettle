@@ -42,6 +42,8 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.IUser;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.step.RowDistributionPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPluginType;
 
 /**
  * The KettleEnvironment class contains settings and properties for all of Kettle. Initialization of the environment is
@@ -112,6 +114,8 @@ public class KettleEnvironment {
       PluginRegistry.addPluginType( CompressionPluginType.getInstance() );
       PluginRegistry.addPluginType( AuthenticationProviderPluginType.getInstance() );
       PluginRegistry.addPluginType( AuthenticationConsumerPluginType.getInstance() );
+      PluginRegistry.addPluginType( UnivariateValueCalculatorPluginType.getInstance() );
+      PluginRegistry.addPluginType( UnivariateValueProcessorPluginType.getInstance() );
       PluginRegistry.init();
 
       // Also read the list of variables.

@@ -22,23 +22,31 @@
 
 package org.pentaho.di.trans.steps.univariatestats;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.plugins.PluginInterface;
+import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
-import org.pentaho.di.trans.steps.univariatestats.calculators.MeanValueCalculator;
-import org.pentaho.di.trans.steps.univariatestats.calculators.PercentileValueCalculator;
-import org.pentaho.di.trans.steps.univariatestats.calculators.StandardDeviationCalculator;
-import org.pentaho.di.trans.steps.univariatestats.processors.CountValueProcessor;
-import org.pentaho.di.trans.steps.univariatestats.processors.MaxValueProcessor;
-import org.pentaho.di.trans.steps.univariatestats.processors.MinValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPlugin;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPlugin;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.MeanValueCalculator;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.PercentileValueCalculator;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.StandardDeviationCalculator;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.CountValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.MaxValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.MinValueProcessor;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
@@ -54,14 +62,7 @@ public class UnivariateStatsMetaFunction implements Cloneable {
   public static final String XML_TAG = "univariate_stats";
 
   private String m_sourceFieldName;
-  private boolean m_n = true;
-  private boolean m_mean = true;
-  private boolean m_stdDev = true;
-  private boolean m_min = true;
-  private boolean m_max = true;
-  private boolean m_median = true;
-  private double m_arbitraryPercentile = -1;
-  private boolean m_interpolatePercentile = true;
+  private List<UnivariateStatsValueProducer> valueProducers = new ArrayList<UnivariateStatsValueProducer>();
 
   /**
    * Creates a new <code>UnivariateStatsMetaFunction</code>
@@ -87,17 +88,75 @@ public class UnivariateStatsMetaFunction implements Cloneable {
    *          href="http://www.itl.nist.gov/div898/handbook/prc/section2/prc252.htm"> The Engineering Statistics
    *          Handbook</a> for details.
    */
-  public UnivariateStatsMetaFunction( String sourceFieldName, boolean n, boolean mean, boolean stdDev, boolean min,
-      boolean max, boolean median, double arbPercentile, boolean interpolate ) {
+  public UnivariateStatsMetaFunction( String sourceFieldName ) {
     m_sourceFieldName = sourceFieldName;
-    m_n = n;
-    m_mean = mean;
-    m_stdDev = stdDev;
-    m_min = min;
-    m_max = max;
-    m_median = median;
-    m_arbitraryPercentile = arbPercentile;
-    m_interpolatePercentile = interpolate;
+  }
+
+  public void legacyLoad( String sourceField, boolean count, boolean mean, boolean stdDev, boolean min, boolean max, boolean median,
+      double percentile, boolean interpolate ) {
+    List<UnivariateStatsValueConfig> configs = new ArrayList<UnivariateStatsValueConfig>();
+    m_sourceFieldName = sourceField;
+
+    String temp = XMLHandler.getTagValue( uniNode, "N" );
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      configs.add( new UnivariateStatsValueConfig( CountValueProcessor.ID ) );
+    }
+    temp = XMLHandler.getTagValue( uniNode, "mean" );
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      configs.add( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
+    }
+
+    temp = XMLHandler.getTagValue( uniNode, "stdDev" );
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      configs.add( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
+    }
+
+    temp = XMLHandler.getTagValue( uniNode, "min" );
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      configs.add( new UnivariateStatsValueConfig( MinValueProcessor.ID ) );
+    }
+
+    temp = XMLHandler.getTagValue( uniNode, "max" );
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      configs.add( new UnivariateStatsValueConfig( MaxValueProcessor.ID ) );
+    }
+
+    temp = XMLHandler.getTagValue( uniNode, "median" );
+    UnivariateStatsValueConfig medianConfig = null;
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      medianConfig = new UnivariateStatsValueConfig( PercentileValueCalculator.ID );
+      medianConfig.setParameter( PercentileValueCalculator.PERCENTILE_NAME, 0.5 );
+      configs.add( medianConfig );
+    }
+
+    temp = XMLHandler.getTagValue( uniNode, "percentile" );
+    UnivariateStatsValueConfig percentileConfig = null;
+    try {
+      double m_arbitraryPercentile = Double.parseDouble( temp );
+      if ( m_arbitraryPercentile != -1 ) {
+        percentileConfig = new UnivariateStatsValueConfig( PercentileValueCalculator.ID );
+        percentileConfig.setParameter( PercentileValueCalculator.PERCENTILE_NAME, m_arbitraryPercentile );
+      }
+    } catch ( Exception ex ) {
+      // noop m_arbitraryPercentile = -1;
+    }
+
+    temp = XMLHandler.getTagValue( uniNode, "interpolate" );
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      if ( medianConfig != null ) {
+        medianConfig.setParameter( PercentileValueCalculator.INTERPOLATE_NAME, true );
+      }
+      if ( percentileConfig != null ) {
+        percentileConfig.setParameter( PercentileValueCalculator.INTERPOLATE_NAME, true );
+      }
+    }
+
+    try {
+      valueProducers = createUnivariateStatsValueProducerList( configs );
+    } catch ( KettlePluginException e ) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -108,47 +167,68 @@ public class UnivariateStatsMetaFunction implements Cloneable {
    */
   public UnivariateStatsMetaFunction( Node uniNode ) {
     String temp;
+    List<UnivariateStatsValueConfig> configs = new ArrayList<UnivariateStatsValueConfig>();
     m_sourceFieldName = XMLHandler.getTagValue( uniNode, "source_field_name" );
 
     temp = XMLHandler.getTagValue( uniNode, "N" );
-    if ( temp.equalsIgnoreCase( "N" ) ) {
-      m_n = false;
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      configs.add( new UnivariateStatsValueConfig( CountValueProcessor.ID ) );
     }
     temp = XMLHandler.getTagValue( uniNode, "mean" );
-    if ( temp.equalsIgnoreCase( "N" ) ) {
-      m_mean = false;
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      configs.add( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
     }
 
     temp = XMLHandler.getTagValue( uniNode, "stdDev" );
-    if ( temp.equalsIgnoreCase( "N" ) ) {
-      m_stdDev = false;
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      configs.add( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
     }
 
     temp = XMLHandler.getTagValue( uniNode, "min" );
-    if ( temp.equalsIgnoreCase( "N" ) ) {
-      m_min = false;
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      configs.add( new UnivariateStatsValueConfig( MinValueProcessor.ID ) );
     }
 
     temp = XMLHandler.getTagValue( uniNode, "max" );
-    if ( temp.equalsIgnoreCase( "N" ) ) {
-      m_max = false;
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      configs.add( new UnivariateStatsValueConfig( MaxValueProcessor.ID ) );
     }
 
     temp = XMLHandler.getTagValue( uniNode, "median" );
-    if ( temp.equalsIgnoreCase( "N" ) ) {
-      m_median = false;
+    UnivariateStatsValueConfig medianConfig = null;
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      medianConfig = new UnivariateStatsValueConfig( PercentileValueCalculator.ID );
+      medianConfig.setParameter( PercentileValueCalculator.PERCENTILE_NAME, 0.5 );
+      configs.add( medianConfig );
     }
 
     temp = XMLHandler.getTagValue( uniNode, "percentile" );
+    UnivariateStatsValueConfig percentileConfig = null;
     try {
-      m_arbitraryPercentile = Double.parseDouble( temp );
+      double m_arbitraryPercentile = Double.parseDouble( temp );
+      if ( m_arbitraryPercentile != -1 ) {
+        percentileConfig = new UnivariateStatsValueConfig( PercentileValueCalculator.ID );
+        percentileConfig.setParameter( PercentileValueCalculator.PERCENTILE_NAME, m_arbitraryPercentile );
+      }
     } catch ( Exception ex ) {
-      m_arbitraryPercentile = -1;
+      // noop m_arbitraryPercentile = -1;
     }
 
     temp = XMLHandler.getTagValue( uniNode, "interpolate" );
-    if ( temp.equalsIgnoreCase( "N" ) ) {
-      m_interpolatePercentile = false;
+    if ( !temp.equalsIgnoreCase( "N" ) ) {
+      if ( medianConfig != null ) {
+        medianConfig.setParameter( PercentileValueCalculator.INTERPOLATE_NAME, true );
+      }
+      if ( percentileConfig != null ) {
+        percentileConfig.setParameter( PercentileValueCalculator.INTERPOLATE_NAME, true );
+      }
+    }
+
+    try {
+      valueProducers = createUnivariateStatsValueProducerList( configs );
+    } catch ( KettlePluginException e ) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
   }
 
@@ -431,78 +511,83 @@ public class UnivariateStatsMetaFunction implements Cloneable {
    * @param percentile
    *          the percentile to compute (0 <= percentile <= 100)
    */
-  public void setCalcPercentile( double percentile ) {
+  public double calcCalcPercentile( double percentile ) {
     if ( percentile < 0 ) {
-      m_arbitraryPercentile = -1; // not used
-      return;
+      return -1; // not used
     }
 
     if ( percentile >= 0 && percentile <= 100 ) {
       m_arbitraryPercentile = percentile / 100.0;
-      return;
+      return percentile / 100.0;
     }
 
-    m_arbitraryPercentile = -1; // not used
+    return -1; // not used
   }
 
   public List<UnivariateStatsValueProducer> getRequestedValues() {
-    String origin = getSourceFieldName();
-    List<UnivariateStatsValueProducer> result = new ArrayList<UnivariateStatsValueProducer>();
-    if ( getCalcN() ) {
-      result.add( new CountValueProcessor( origin ) );
-    }
-    if ( getCalcMean() ) {
-      result.add( new MeanValueCalculator( origin ) );
-    }
-    if ( getCalcStdDev() ) {
-      result.add( new StandardDeviationCalculator( origin ) );
-    }
-    if ( getCalcMin() ) {
-      result.add( new MinValueProcessor( origin ) );
-    }
-    if ( getCalcMax() ) {
-      result.add( new MaxValueProcessor( origin ) );
-    }
-    if ( getCalcMedian() ) {
-      result.add( new PercentileValueCalculator( origin, 0.5, m_interpolatePercentile ) );
-    }
-    if ( getCalcPercentile() >= 0 && !( getCalcPercentile() == 0.5 && getCalcMedian() ) ) {
-      result.add( new PercentileValueCalculator( origin, getCalcPercentile(), m_interpolatePercentile ) );
+    return new ArrayList<UnivariateStatsValueProducer>( valueProducers );
+  }
+
+  private List<UnivariateStatsValueProducer> createUnivariateStatsValueProducerList(
+      List<UnivariateStatsValueConfig> configs ) throws KettlePluginException {
+    List<UnivariateStatsValueProducer> result = new ArrayList<UnivariateStatsValueProducer>( configs.size() );
+    for ( UnivariateStatsValueConfig config : configs ) {
+      PluginInterface producerPlugin =
+          PluginRegistry.getInstance().getPlugin( UnivariateValueCalculatorPluginType.class, config.getId() );
+      if ( producerPlugin == null ) {
+        producerPlugin =
+            PluginRegistry.getInstance().getPlugin( UnivariateValueProcessorPluginType.class, config.getId() );
+      }
+      UnivariateStatsValueProducer producer =
+          (UnivariateStatsValueProducer) PluginRegistry.getInstance().loadClass( producerPlugin );
+      producer.setParameters( config.getParameters() );
     }
     return result;
   }
 
+  public void addConfig( UnivariateStatsValueConfig config ) throws KettlePluginException {
+    PluginInterface producerPlugin =
+        PluginRegistry.getInstance().getPlugin( UnivariateValueCalculatorPluginType.class, config.getId() );
+    if ( producerPlugin == null ) {
+      producerPlugin =
+          PluginRegistry.getInstance().getPlugin( UnivariateValueProcessorPluginType.class, config.getId() );
+    }
+    UnivariateStatsValueProducer producer =
+        (UnivariateStatsValueProducer) PluginRegistry.getInstance().loadClass( producerPlugin );
+    producer.setParameters( config.getParameters() );
+    valueProducers.add( producer );
+  }
+
   @SuppressWarnings( "unchecked" )
-  public List<UnivariateStatsValueProcessor> getProcessors( List<UnivariateStatsValueProducer> producers )
+  public Map<String, UnivariateStatsValueProcessor> getProcessors( List<UnivariateStatsValueProducer> producers )
     throws KettleStepException {
-    List<UnivariateStatsValueProcessor> result = new ArrayList<UnivariateStatsValueProcessor>();
-    Set<Class<? extends UnivariateStatsValueProcessor>> requiredProcessors =
-        new HashSet<Class<? extends UnivariateStatsValueProcessor>>();
+    Map<String, UnivariateStatsValueProcessor> result = new HashMap<String, UnivariateStatsValueProcessor>();
+    Set<String> requiredProcessors = new HashSet<String>();
     for ( UnivariateStatsValueProducer producer : producers ) {
       if ( producer instanceof UnivariateStatsValueProcessor ) {
-        result.add( (UnivariateStatsValueProcessor) producer );
+        UnivariateValueProcessorPlugin processorAnnotation =
+            producer.getClass().getAnnotation( UnivariateValueProcessorPlugin.class );
+        result.put( processorAnnotation.id(), (UnivariateStatsValueProcessor) producer );
       } else if ( producer instanceof UnivariateStatsValueCalculator ) {
-        for ( Class<? extends UnivariateStatsValueProducer> clazz : ( (UnivariateStatsValueCalculator) producer )
-            .getRequiredProcessors() ) {
-          if ( UnivariateStatsValueProcessor.class.isAssignableFrom( clazz ) ) {
-            requiredProcessors.add( (Class<? extends UnivariateStatsValueProcessor>) clazz );
-          }
+        UnivariateValueCalculatorPlugin calculatorAnnotation =
+            producer.getClass().getAnnotation( UnivariateValueCalculatorPlugin.class );
+        for ( String requiredId : calculatorAnnotation.requiredProcessors() ) {
+          requiredProcessors.add( requiredId );
         }
       }
     }
-    for ( UnivariateStatsValueProducer producer : producers ) {
-      requiredProcessors.remove( producer.getClass() );
-    }
-    for ( UnivariateStatsValueProcessor processor : result ) {
-      requiredProcessors.remove( processor.getClass() );
-    }
-    for ( Class<? extends UnivariateStatsValueProcessor> clazz : requiredProcessors ) {
+    requiredProcessors.removeAll( result.keySet() );
+    for ( String requiredId : requiredProcessors ) {
+      PluginInterface processorPlugin =
+          PluginRegistry.getInstance().getPlugin( UnivariateValueProcessorPluginType.class, requiredId );
+      UnivariateStatsValueProcessor processor = null;
       try {
-        Constructor<? extends UnivariateStatsValueProcessor> constructor = clazz.getConstructor( String.class );
-        result.add( constructor.newInstance( getSourceFieldName() ) );
-      } catch ( Exception e ) {
+        processor = (UnivariateStatsValueProcessor) PluginRegistry.getInstance().loadClass( processorPlugin );
+      } catch ( KettlePluginException e ) {
         throw new KettleStepException( e );
       }
+      processor.setOrigin( getSourceFieldName() );
+      result.put( requiredId, processor );
     }
     return result;
   }

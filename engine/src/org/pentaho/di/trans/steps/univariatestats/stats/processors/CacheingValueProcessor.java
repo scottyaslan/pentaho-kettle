@@ -1,4 +1,4 @@
-package org.pentaho.di.trans.steps.univariatestats.processors;
+package org.pentaho.di.trans.steps.univariatestats.stats.processors;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,13 +8,17 @@ import java.util.List;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPlugin;
 
-public class CacheingValueProcessor extends AbstractValueProcessor implements UnivariateStatsValueProcessor {
+@UnivariateValueProcessorPlugin( id = CacheingValueProcessor.ID, name = CacheingValueProcessor.NAME )
+public class CacheingValueProcessor extends AbstractValueProducer implements UnivariateStatsValueProcessor {
+  public static final String ID = "CACHE_AND_SORT";
+  public static final String NAME = "Cache and sort";
   private final List<Double> cache;
   private boolean sorted = false;
 
-  public CacheingValueProcessor( String origin ) {
-    super( "cache", origin, ValueMetaInterface.TYPE_NONE );
+  public CacheingValueProcessor( ) {
+    super( NAME, ValueMetaInterface.TYPE_NONE );
     cache = new ArrayList<Double>();
   }
 

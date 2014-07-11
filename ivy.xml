@@ -15,6 +15,7 @@
     <dependency org="${ivy.artifact.group}" name="kettle-ui-swt"   rev="${project.revision}" changing="true">
       <exclude name="swt-linux-x86_64"/>
     </dependency>
+    <dependency org="com.clearspring.analytics"        name="stream"               rev="2.7.0"           transitive="false"/>
 
     <!-- Common (Unit, Integration) test dependencies -->
     <dependency org="junit"                    name="junit"                rev="4.7"    transitive="false" conf="test->default"/>
