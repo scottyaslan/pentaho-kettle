@@ -1,14 +1,22 @@
 package org.pentaho.di.trans.steps.univariatestats.stats.processors;
 
+import java.util.List;
 import java.util.Map;
 
+import org.pentaho.di.core.database.DatabaseMeta;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettlePluginException;
+import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaFactory;
+import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProducer;
+import org.pentaho.metastore.api.IMetaStore;
+import org.w3c.dom.Node;
 
 public abstract class AbstractValueProducer implements UnivariateStatsValueProducer {
-  private final String name;
+  private String name;
   private String origin;
   private final int outputType;
   private ValueMetaInterface outputMeta = null;
@@ -25,6 +33,10 @@ public abstract class AbstractValueProducer implements UnivariateStatsValueProdu
   @Override
   public String getName() {
     return name;
+  }
+
+  public void setName( String name ) {
+    this.name = name;
   }
 
   @Override
@@ -44,5 +56,27 @@ public abstract class AbstractValueProducer implements UnivariateStatsValueProdu
   @Override
   public void setParameters( Map<String, Object> parameters ) {
     // noop default
+  }
+
+  @Override
+  public String getXml() {
+    return "";
+  }
+
+  @Override
+  public void loadXML( Node producerNode, List<DatabaseMeta> databases, IMetaStore metaStore ) throws KettleXMLException {
+    // Noop
+  }
+
+  @Override
+  public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step, int nr,
+      String prefix ) throws KettleException {
+    // Noop
+  }
+
+  @Override
+  public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases, int nr,
+      String prefix ) throws KettleException {
+    // Noop
   }
 }

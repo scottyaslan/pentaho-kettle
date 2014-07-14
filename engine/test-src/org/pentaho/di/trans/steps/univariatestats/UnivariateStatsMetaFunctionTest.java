@@ -28,6 +28,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
@@ -45,10 +48,14 @@ import org.pentaho.di.repository.StringObjectId;
 import org.pentaho.di.trans.steps.loadsave.MemoryRepository;
 import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPluginType;
 import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.MeanValueCalculator;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.PercentileValueCalculator;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.StandardDeviationCalculator;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.CountValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.MaxValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.MinValueProcessor;
 import org.pentaho.test.util.GetterSetterTester;
-import org.pentaho.test.util.ObjectTester;
 import org.pentaho.test.util.ObjectTesterBuilder;
-import org.pentaho.test.util.ObjectValidator;
 
 public class UnivariateStatsMetaFunctionTest {
 
@@ -62,27 +69,49 @@ public class UnivariateStatsMetaFunctionTest {
   @Test
   public void testValuesConstructor() {
     UnivariateStatsMetaFunction function =
-        new UnivariateStatsMetaFunction( null, false, false, false, false, false, false, 0, false );
+        new UnivariateStatsMetaFunction( null, false, false, false, false, false, false, -1, false );
     assertNull( function.getSourceFieldName() );
-    assertFalse( function.getCalcN() );
-    assertFalse( function.getCalcMean() );
-    assertFalse( function.getCalcStdDev() );
-    assertFalse( function.getCalcMin() );
-    assertFalse( function.getCalcMax() );
-    assertFalse( function.getCalcMedian() );
-    assertEquals( 0, function.getCalcPercentile(), 0 );
-    assertFalse( function.getInterpolatePercentile() );
+    List<UnivariateStatsValueProducer> producers = function.getRequestedValues();
+    Set<Class<?>> producerClasses = new HashSet<Class<?>>();
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      producerClasses.add( producer.getClass() );
+    }
+    assertFalse( producerClasses.contains( CountValueProcessor.class ) );
+    assertFalse( producerClasses.contains( MeanValueCalculator.class ) );
+    assertFalse( producerClasses.contains( StandardDeviationCalculator.class ) );
+    assertFalse( producerClasses.contains( MinValueProcessor.class ) );
+    assertFalse( producerClasses.contains( MaxValueProcessor.class ) );
+    assertFalse( producerClasses.contains( PercentileValueCalculator.class ) );
 
-    function = new UnivariateStatsMetaFunction( "test", true, true, true, true, true, true, 0.5, true );
+    function = new UnivariateStatsMetaFunction( "test", true, true, true, true, true, true, 0.55, true );
     assertEquals( "test", function.getSourceFieldName() );
-    assertTrue( function.getCalcN() );
-    assertTrue( function.getCalcMean() );
-    assertTrue( function.getCalcStdDev() );
-    assertTrue( function.getCalcMin() );
-    assertTrue( function.getCalcMax() );
-    assertTrue( function.getCalcMedian() );
-    assertEquals( 0.5, function.getCalcPercentile(), 0 );
-    assertTrue( function.getInterpolatePercentile() );
+    producers = function.getRequestedValues();
+    producerClasses = new HashSet<Class<?>>();
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      producerClasses.add( producer.getClass() );
+    }
+    assertTrue( producerClasses.contains( CountValueProcessor.class ) );
+    assertTrue( producerClasses.contains( MeanValueCalculator.class ) );
+    assertTrue( producerClasses.contains( StandardDeviationCalculator.class ) );
+    assertTrue( producerClasses.contains( MinValueProcessor.class ) );
+    assertTrue( producerClasses.contains( MaxValueProcessor.class ) );
+    assertTrue( producerClasses.contains( PercentileValueCalculator.class ) );
+    boolean foundMedian = false;
+    boolean foundPercentile = false;
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      if ( producer instanceof PercentileValueCalculator ) {
+        PercentileValueCalculator calculator = (PercentileValueCalculator) producer;
+        double percentile = calculator.getPercentile();
+        if ( percentile == 0.5 ) {
+          foundMedian = true;
+        } else if ( percentile == 0.55 ) {
+          foundPercentile = true;
+        }
+        assertTrue( calculator.isInterpolate() );
+      }
+    }
+    assertTrue( foundMedian );
+    assertTrue( foundPercentile );
   }
 
   @Test
@@ -91,63 +120,111 @@ public class UnivariateStatsMetaFunctionTest {
         IOUtils.toString( UnivariateStatsMetaTest.class.getClassLoader().getResourceAsStream(
             "org/pentaho/di/trans/steps/univariatestats/trueValuesUnivariateStatsMetaFunctionNode.xml" ) );
     UnivariateStatsMetaFunction function =
-        new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild() );
+        new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild(), null, null );
+    List<UnivariateStatsValueProducer> producers = function.getRequestedValues();
+    Set<Class<?>> producerClasses = new HashSet<Class<?>>();
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      producerClasses.add( producer.getClass() );
+    }
     assertEquals( "a", function.getSourceFieldName() );
-    assertTrue( function.getCalcN() );
-    assertTrue( function.getCalcMean() );
-    assertTrue( function.getCalcStdDev() );
-    assertTrue( function.getCalcMin() );
-    assertTrue( function.getCalcMax() );
-    assertTrue( function.getCalcMedian() );
-    assertEquals( 0.5, function.getCalcPercentile(), 0 );
-    assertTrue( function.getInterpolatePercentile() );
+    assertTrue( producerClasses.contains( CountValueProcessor.class ) );
+    assertTrue( producerClasses.contains( MeanValueCalculator.class ) );
+    assertTrue( producerClasses.contains( StandardDeviationCalculator.class ) );
+    assertTrue( producerClasses.contains( MinValueProcessor.class ) );
+    assertTrue( producerClasses.contains( MaxValueProcessor.class ) );
+    assertTrue( producerClasses.contains( PercentileValueCalculator.class ) );
+
+    boolean foundMedian = false;
+    boolean foundPercentile = false;
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      if ( producer instanceof PercentileValueCalculator ) {
+        PercentileValueCalculator calculator = (PercentileValueCalculator) producer;
+        double percentile = calculator.getPercentile();
+        if ( percentile == 0.5 ) {
+          foundMedian = true;
+        } else if ( percentile == 0.55 ) {
+          foundPercentile = true;
+        }
+        assertTrue( calculator.isInterpolate() );
+      }
+    }
+    assertTrue( foundMedian );
+    assertTrue( foundPercentile );
 
     functionXml =
         IOUtils.toString( UnivariateStatsMetaTest.class.getClassLoader().getResourceAsStream(
             "org/pentaho/di/trans/steps/univariatestats/falseValuesUnivariateStatsMetaFunctionNode.xml" ) );
-    function = new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild() );
+    function = new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild(), null, null );
     assertTrue( Const.isEmpty( function.getSourceFieldName() ) );
-    assertFalse( function.getCalcN() );
-    assertFalse( function.getCalcMean() );
-    assertFalse( function.getCalcStdDev() );
-    assertFalse( function.getCalcMin() );
-    assertFalse( function.getCalcMax() );
-    assertFalse( function.getCalcMedian() );
-    assertEquals( -1.0, function.getCalcPercentile(), 0 );
-    assertFalse( function.getInterpolatePercentile() );
+    producers = function.getRequestedValues();
+    producerClasses = new HashSet<Class<?>>();
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      producerClasses.add( producer.getClass() );
+    }
+    assertFalse( producerClasses.contains( CountValueProcessor.class ) );
+    assertFalse( producerClasses.contains( MeanValueCalculator.class ) );
+    assertFalse( producerClasses.contains( StandardDeviationCalculator.class ) );
+    assertFalse( producerClasses.contains( MinValueProcessor.class ) );
+    assertFalse( producerClasses.contains( MaxValueProcessor.class ) );
+    assertFalse( producerClasses.contains( PercentileValueCalculator.class ) );
   }
 
   @Test
-  public void testRepoConstructor() throws ParseException, KettleException, IOException {
+  public void testRepoConstructor() throws KettleException, IOException, ParseException {
     String jsString =
         IOUtils.toString( UnivariateStatsMetaTest.class.getClassLoader().getResourceAsStream(
             "org/pentaho/di/trans/steps/univariatestats/trueValuesUnivariateStatsMetaFunctionNode.json" ) );
     Repository repo = new MemoryRepository( jsString );
-    UnivariateStatsMetaFunction function = new UnivariateStatsMetaFunction( repo, new StringObjectId( "test" ), 0 );
+    UnivariateStatsMetaFunction function =
+        new UnivariateStatsMetaFunction( repo, null, new StringObjectId( "test" ), null, 0 );
     assertEquals( "test", function.getSourceFieldName() );
-    assertTrue( function.getCalcN() );
-    assertTrue( function.getCalcMean() );
-    assertTrue( function.getCalcStdDev() );
-    assertTrue( function.getCalcMin() );
-    assertTrue( function.getCalcMax() );
-    assertTrue( function.getCalcMedian() );
-    assertEquals( 0.5, function.getCalcPercentile(), 0 );
-    assertTrue( function.getInterpolatePercentile() );
+    List<UnivariateStatsValueProducer> producers = function.getRequestedValues();
+    Set<Class<?>> producerClasses = new HashSet<Class<?>>();
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      producerClasses.add( producer.getClass() );
+    }
+    assertEquals( "test", function.getSourceFieldName() );
+    assertTrue( producerClasses.contains( CountValueProcessor.class ) );
+    assertTrue( producerClasses.contains( MeanValueCalculator.class ) );
+    assertTrue( producerClasses.contains( StandardDeviationCalculator.class ) );
+    assertTrue( producerClasses.contains( MinValueProcessor.class ) );
+    assertTrue( producerClasses.contains( MaxValueProcessor.class ) );
+    assertTrue( producerClasses.contains( PercentileValueCalculator.class ) );
+
+    boolean foundMedian = false;
+    boolean foundPercentile = false;
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      if ( producer instanceof PercentileValueCalculator ) {
+        PercentileValueCalculator calculator = (PercentileValueCalculator) producer;
+        double percentile = calculator.getPercentile();
+        if ( percentile == 0.5 ) {
+          foundMedian = true;
+        } else if ( percentile == 0.55 ) {
+          foundPercentile = true;
+        }
+        assertTrue( calculator.isInterpolate() );
+      }
+    }
+    assertTrue( foundMedian );
+    assertTrue( foundPercentile );
 
     jsString =
         IOUtils.toString( UnivariateStatsMetaTest.class.getClassLoader().getResourceAsStream(
             "org/pentaho/di/trans/steps/univariatestats/falseValuesUnivariateStatsMetaFunctionNode.json" ) );
     repo = new MemoryRepository( jsString );
-    function = new UnivariateStatsMetaFunction( repo, new StringObjectId( "test" ), 0 );
+    function = new UnivariateStatsMetaFunction( repo, null, new StringObjectId( "test" ), null, 0 );
     assertTrue( Const.isEmpty( function.getSourceFieldName() ) );
-    assertFalse( function.getCalcN() );
-    assertFalse( function.getCalcMean() );
-    assertFalse( function.getCalcStdDev() );
-    assertFalse( function.getCalcMin() );
-    assertFalse( function.getCalcMax() );
-    assertFalse( function.getCalcMedian() );
-    assertEquals( -1.0, function.getCalcPercentile(), 0 );
-    assertFalse( function.getInterpolatePercentile() );
+    producers = function.getRequestedValues();
+    producerClasses = new HashSet<Class<?>>();
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      producerClasses.add( producer.getClass() );
+    }
+    assertFalse( producerClasses.contains( CountValueProcessor.class ) );
+    assertFalse( producerClasses.contains( MeanValueCalculator.class ) );
+    assertFalse( producerClasses.contains( StandardDeviationCalculator.class ) );
+    assertFalse( producerClasses.contains( MinValueProcessor.class ) );
+    assertFalse( producerClasses.contains( MaxValueProcessor.class ) );
+    assertFalse( producerClasses.contains( PercentileValueCalculator.class ) );
   }
 
   @Test
@@ -156,17 +233,17 @@ public class UnivariateStatsMetaFunctionTest {
         IOUtils.toString( UnivariateStatsMetaTest.class.getClassLoader().getResourceAsStream(
             "org/pentaho/di/trans/steps/univariatestats/trueValuesUnivariateStatsMetaFunctionNode.xml" ) );
     UnivariateStatsMetaFunction function =
-        new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild() );
+        new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild(), null, null );
     UnivariateStatsMetaFunction function2 =
-        new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild() );
+        new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild(), null, null );
     assertEquals( function, function2 );
 
     functionXml =
         IOUtils.toString( UnivariateStatsMetaTest.class.getClassLoader().getResourceAsStream(
             "org/pentaho/di/trans/steps/univariatestats/falseValuesUnivariateStatsMetaFunctionNode.xml" ) );
-    function = new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild() );
+    function = new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild(), null, null );
     assertFalse( function.equals( function2 ) );
-    function2 = new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild() );
+    function2 = new UnivariateStatsMetaFunction( XMLHandler.loadXMLString( functionXml ).getFirstChild(), null, null );
     assertEquals( function, function2 );
   }
 
@@ -181,31 +258,8 @@ public class UnivariateStatsMetaFunctionTest {
   public void testGettersAndSetters() {
     GetterSetterTester<UnivariateStatsMetaFunction> getterSetterTest =
         new GetterSetterTester<UnivariateStatsMetaFunction>( UnivariateStatsMetaFunction.class );
-    ObjectTester<Boolean> primitiveBooleanTester =
-        new ObjectTesterBuilder<Boolean>().addObject( true ).addObject( false ).build();
     getterSetterTest.addObjectTester( "sourceFieldName", new ObjectTesterBuilder<String>().addObject( null ).addObject(
         UUID.randomUUID().toString() ).build() );
-    getterSetterTest.addObjectTester( "calcN", primitiveBooleanTester );
-    getterSetterTest.addObjectTester( "calcMean", primitiveBooleanTester );
-    getterSetterTest.addObjectTester( "calcStdDev", primitiveBooleanTester );
-    getterSetterTest.addObjectTester( "calcMin", primitiveBooleanTester );
-    getterSetterTest.addObjectTester( "calcMax", primitiveBooleanTester );
-    getterSetterTest.addObjectTester( "calcMedian", primitiveBooleanTester );
-    getterSetterTest.addObjectTester( "interpolatePercentile", primitiveBooleanTester );
-    getterSetterTest.addObjectTester( "calcPercentile", new ObjectTesterBuilder<Double>().addObject( -100.0 )
-        .addObject( 0.0 ).addObject( 55.5 ).addObject( 100.0 ).setValidator( new ObjectValidator<Double>() {
-
-          @Override
-          public void validate( Double expected, Object actual ) {
-            assertEquals( Double.class, actual.getClass() );
-            double actualValue = ( (Double) actual ).doubleValue();
-            if ( 0 <= expected && expected <= 100 ) {
-              assertEquals( expected / 100.0, actualValue, 0 );
-            } else {
-              assertEquals( -1.0, actualValue, 0 );
-            }
-          }
-        } ).build() );
     getterSetterTest.test( new UnivariateStatsMetaFunction( null, false, false, false, false, false, false, 0, false ) );
   }
 }

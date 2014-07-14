@@ -133,7 +133,7 @@ public class UnivariateStatsMeta extends BaseStepMeta implements StepMetaInterfa
     allocate( nrStats );
     for ( int i = 0; i < nrStats; i++ ) {
       Node statnode = XMLHandler.getSubNodeByNr( stepnode, UnivariateStatsMetaFunction.XML_TAG, i );
-      m_stats[i] = new UnivariateStatsMetaFunction( statnode );
+      m_stats[i] = new UnivariateStatsMetaFunction( statnode, databases, metaStore );
     }
   }
 
@@ -207,7 +207,7 @@ public class UnivariateStatsMeta extends BaseStepMeta implements StepMetaInterfa
     allocate( nrStats );
 
     for ( int i = 0; i < nrStats; i++ ) {
-      m_stats[i] = new UnivariateStatsMetaFunction( rep, id_step, i );
+      m_stats[i] = new UnivariateStatsMetaFunction( rep, metaStore, id_step, databases, i );
     }
   }
 

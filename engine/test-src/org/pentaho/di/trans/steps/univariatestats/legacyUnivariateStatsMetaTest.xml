@@ -16,7 +16,7 @@
 <min>Y</min>
 <max>Y</max>
 <median>Y</median>
-<percentile>0.5</percentile>
+<percentile>0.55</percentile>
 <interpolate>Y</interpolate>
 </univariate_stats>
        <univariate_stats><source_field_name>b</source_field_name>

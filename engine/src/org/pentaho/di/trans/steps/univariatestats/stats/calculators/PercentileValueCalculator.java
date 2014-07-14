@@ -4,9 +4,16 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
 
+import org.pentaho.di.core.Const;
+import org.pentaho.di.core.database.DatabaseMeta;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.exception.KettleValueException;
+import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.ValueMetaInterface;
+import org.pentaho.di.core.xml.XMLHandler;
+import org.pentaho.di.repository.ObjectId;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueCalculator;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPlugin;
@@ -15,6 +22,8 @@ import org.pentaho.di.trans.steps.univariatestats.stats.processors.CacheingValue
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.CountValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.MaxValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.MinValueProcessor;
+import org.pentaho.metastore.api.IMetaStore;
+import org.w3c.dom.Node;
 
 @UnivariateValueCalculatorPlugin( id = PercentileValueCalculator.ID, name = PercentileValueCalculator.NAME,
     requiredProcessors = { CountValueProcessor.ID, MinValueProcessor.ID, MaxValueProcessor.ID,
@@ -47,12 +56,13 @@ public class PercentileValueCalculator extends AbstractValueProducer implements 
   }
 
   public PercentileValueCalculator() {
-    super( null/* getName( percentile ) */, ValueMetaInterface.TYPE_NUMBER );
+    super( null, ValueMetaInterface.TYPE_NUMBER );
   }
 
   @Override
   public void setParameters( Map<String, Object> parameters ) {
     percentile = (Double) parameters.get( PERCENTILE_NAME );
+    setName( PercentileValueCalculator.getName( percentile ) );
     if ( parameters.containsKey( INTERPOLATE_NAME ) ) {
       interpolate = (Boolean) parameters.get( INTERPOLATE_NAME );
     } else {
@@ -137,5 +147,47 @@ public class PercentileValueCalculator extends AbstractValueProducer implements 
       res = ( vals.get( (int) ( i - 1 ) ) + vals.get( (int) i ) ) / 2.0;
     }
     return res;
+  }
+
+  public boolean isInterpolate() {
+    return interpolate;
+  }
+
+  public double getPercentile() {
+    return percentile;
+  }
+
+  @Override
+  public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases, int nr,
+      String prefix ) throws KettleException {
+    super.readRep( rep, metaStore, id_step, databases, nr, prefix );
+    interpolate = rep.getStepAttributeBoolean( id_step, nr, prefix + "-interpolate", false );
+    String percentileString = Const.NVL( rep.getStepAttributeString( id_step, nr, prefix + "-percentile" ), "0" );
+    percentile = Double.parseDouble( percentileString );
+  }
+
+  @Override
+  public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step, int nr,
+      String prefix ) throws KettleException {
+    super.saveRep( rep, metaStore, id_transformation, id_step, nr, prefix );
+    rep.saveStepAttribute( id_transformation, id_step, nr, prefix + "-interpolate", interpolate );
+    String percentileString = Double.toString( percentile );
+    rep.saveStepAttribute( id_transformation, id_step, nr, prefix + "-percentile", percentileString );
+  }
+
+  @Override
+  public String getXml() {
+    StringBuilder sb = new StringBuilder( super.getXml() );
+    sb.append( XMLHandler.addTagValue( "interpolate", interpolate ) );
+    sb.append( XMLHandler.addTagValue( "percentile", Double.toString( percentile ) ) );
+    return sb.toString();
+  }
+
+  @Override
+  public void loadXML( Node producerNode, List<DatabaseMeta> databases, IMetaStore metaStore )
+    throws KettleXMLException {
+    super.loadXML( producerNode, databases, metaStore );
+    interpolate = !"N".equalsIgnoreCase( XMLHandler.getTagValue( producerNode, "interpolate" ) );
+    percentile = Double.parseDouble( Const.NVL( XMLHandler.getTagValue( producerNode, "percentile" ), "0" ) );
   }
 }

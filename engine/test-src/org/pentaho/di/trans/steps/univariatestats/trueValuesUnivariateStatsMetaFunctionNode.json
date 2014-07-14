@@ -6,7 +6,7 @@
     "min": "Y",
     "max": "Y",
     "median": "Y",
-    "percentile": ".5",
+    "percentile": ".55",
     "interpolate": "Y"
   }}},
   "job" : {} }

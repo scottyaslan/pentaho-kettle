@@ -47,8 +47,7 @@ public class FieldIndexTest {
 
   @Test
   public void testCalculateDerived0Count() throws KettleStepException, KettleValueException, KettlePluginException {
-    UnivariateStatsMetaFunction function =
-        new UnivariateStatsMetaFunction( "test", false, true, true, false, false, false, -1, false );
+    UnivariateStatsMetaFunction function = new UnivariateStatsMetaFunction( "test" );
     function.addConfig( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
     function.addConfig( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
     FieldIndex fieldIndex = new FieldIndex( function, 1 );
@@ -61,8 +60,7 @@ public class FieldIndexTest {
 
   @Test
   public void testCalculateDerived1Count() throws KettleException {
-    UnivariateStatsMetaFunction function =
-        new UnivariateStatsMetaFunction( "test", false, true, true, false, false, false, -1, false );
+    UnivariateStatsMetaFunction function = new UnivariateStatsMetaFunction( "test" );
     function.addConfig( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
     function.addConfig( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
     FieldIndex fieldIndex = new FieldIndex( function, 1 );
@@ -76,8 +74,7 @@ public class FieldIndexTest {
 
   @Test
   public void testCalculateDerived3CountPositiveStdDev() throws KettleException {
-    UnivariateStatsMetaFunction function =
-        new UnivariateStatsMetaFunction( "test", false, true, true, false, false, false, -1, false );
+    UnivariateStatsMetaFunction function = new UnivariateStatsMetaFunction( "test" );
     function.addConfig( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
     function.addConfig( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
     FieldIndex fieldIndex = new FieldIndex( function, 1 );

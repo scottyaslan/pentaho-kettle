@@ -23,6 +23,7 @@
 package org.pentaho.di.trans.steps.univariatestats;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -30,13 +31,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -64,6 +66,14 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.loadsave.LoadSaveTester;
 import org.pentaho.di.trans.steps.loadsave.validator.ArrayLoadSaveValidator;
 import org.pentaho.di.trans.steps.loadsave.validator.FieldLoadSaveValidator;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.MeanValueCalculator;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.PercentileValueCalculator;
+import org.pentaho.di.trans.steps.univariatestats.stats.calculators.StandardDeviationCalculator;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.CountValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.MaxValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.MinValueProcessor;
 import org.pentaho.metastore.api.IMetaStore;
 
 public class UnivariateStatsMetaTest {
@@ -73,7 +83,12 @@ public class UnivariateStatsMetaTest {
 
         @Override
         public boolean validateTestObject( UnivariateStatsMetaFunction testObject, Object actual ) {
-          return testObject.getXML().equals( ( (UnivariateStatsMetaFunction) actual ).getXML() );
+          boolean result = testObject.getXML().equals( ( (UnivariateStatsMetaFunction) actual ).getXML() );
+          if ( !result ) {
+            System.out.println( "Expected: " + testObject.getXML() + "\n\n" + "Got: "
+                + ( (UnivariateStatsMetaFunction) actual ).getXML() );
+          }
+          return result;
         }
 
         @Override
@@ -87,8 +102,10 @@ public class UnivariateStatsMetaTest {
       new ArrayLoadSaveValidator<UnivariateStatsMetaFunction>( univariateFunctionFieldLoadSaveValidator );
 
   @BeforeClass
-  public static void registerNumberValueMeta() throws KettlePluginException {
+  public static void beforeClass() throws KettlePluginException {
     ValueMetaPluginType.getInstance().searchPlugins();
+    UnivariateValueProcessorPluginType.getInstance().searchPlugins();
+    UnivariateValueCalculatorPluginType.getInstance().searchPlugins();
   }
 
   @Test
@@ -117,24 +134,47 @@ public class UnivariateStatsMetaTest {
     assertEquals( 2, meta.getNumFieldsToProcess() );
     UnivariateStatsMetaFunction first = meta.getInputFieldMetaFunctions()[0];
     assertEquals( "a", first.getSourceFieldName() );
-    assertEquals( true, first.getCalcN() );
-    assertEquals( true, first.getCalcMean() );
-    assertEquals( true, first.getCalcStdDev() );
-    assertEquals( true, first.getCalcMin() );
-    assertEquals( true, first.getCalcMax() );
-    assertEquals( true, first.getCalcMedian() );
-    assertEquals( .5, first.getCalcPercentile(), 0 );
-    assertEquals( true, first.getInterpolatePercentile() );
+    List<UnivariateStatsValueProducer> producers = first.getRequestedValues();
+    Set<Class<?>> producerClasses = new HashSet<Class<?>>();
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      producerClasses.add( producer.getClass() );
+    }
+    assertTrue( producerClasses.contains( CountValueProcessor.class ) );
+    assertTrue( producerClasses.contains( MeanValueCalculator.class ) );
+    assertTrue( producerClasses.contains( StandardDeviationCalculator.class ) );
+    assertTrue( producerClasses.contains( MinValueProcessor.class ) );
+    assertTrue( producerClasses.contains( MaxValueProcessor.class ) );
+    assertTrue( producerClasses.contains( PercentileValueCalculator.class ) );
+    boolean foundMedian = false;
+    boolean foundPercentile = false;
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      if ( producer instanceof PercentileValueCalculator ) {
+        PercentileValueCalculator calculator = (PercentileValueCalculator) producer;
+        double percentile = calculator.getPercentile();
+        if ( percentile == 0.5 ) {
+          foundMedian = true;
+        } else if ( percentile == 0.55 ) {
+          foundPercentile = true;
+        }
+        assertTrue( calculator.isInterpolate() );
+      }
+    }
+    assertTrue( foundMedian );
+    assertTrue( foundPercentile );
+
     UnivariateStatsMetaFunction second = meta.getInputFieldMetaFunctions()[1];
     assertEquals( "b", second.getSourceFieldName() );
-    assertEquals( false, second.getCalcN() );
-    assertEquals( false, second.getCalcMean() );
-    assertEquals( false, second.getCalcStdDev() );
-    assertEquals( false, second.getCalcMin() );
-    assertEquals( false, second.getCalcMax() );
-    assertEquals( false, second.getCalcMedian() );
-    assertEquals( -1.0, second.getCalcPercentile(), 0 );
-    assertEquals( false, second.getInterpolatePercentile() );
+    producers = second.getRequestedValues();
+    producerClasses = new HashSet<Class<?>>();
+    for ( UnivariateStatsValueProducer producer : producers ) {
+      producerClasses.add( producer.getClass() );
+    }
+    assertFalse( producerClasses.contains( CountValueProcessor.class ) );
+    assertFalse( producerClasses.contains( MeanValueCalculator.class ) );
+    assertFalse( producerClasses.contains( StandardDeviationCalculator.class ) );
+    assertFalse( producerClasses.contains( MinValueProcessor.class ) );
+    assertFalse( producerClasses.contains( MaxValueProcessor.class ) );
+    assertFalse( producerClasses.contains( PercentileValueCalculator.class ) );
   }
 
   @Test
@@ -195,30 +235,37 @@ public class UnivariateStatsMetaTest {
       valueMetas.put( vmi.getName(), vmi.getType() );
     }
     for ( UnivariateStatsMetaFunction function : functions ) {
-      if ( function.getCalcN() ) {
+      List<UnivariateStatsValueProducer> producers = function.getRequestedValues();
+      Set<Class<?>> producerClasses = new HashSet<Class<?>>();
+      for ( UnivariateStatsValueProducer producer : producers ) {
+        producerClasses.add( producer.getClass() );
+      }
+      if ( producerClasses.contains( CountValueProcessor.class ) ) {
         assertContains( valueMetas, function.getSourceFieldName() + "(N)", ValueMetaInterface.TYPE_INTEGER );
       }
-      if ( function.getCalcMean() ) {
+      if ( producerClasses.contains( MeanValueCalculator.class ) ) {
         assertContains( valueMetas, function.getSourceFieldName() + "(mean)", ValueMetaInterface.TYPE_NUMBER );
       }
-      if ( function.getCalcStdDev() ) {
+      if ( producerClasses.contains( StandardDeviationCalculator.class ) ) {
         assertContains( valueMetas, function.getSourceFieldName() + "(stdDev)", ValueMetaInterface.TYPE_NUMBER );
       }
-      if ( function.getCalcMin() ) {
+      if ( producerClasses.contains( MinValueProcessor.class ) ) {
         assertContains( valueMetas, function.getSourceFieldName() + "(min)", ValueMetaInterface.TYPE_NUMBER );
       }
-      if ( function.getCalcMax() ) {
+      if ( producerClasses.contains( MaxValueProcessor.class ) ) {
         assertContains( valueMetas, function.getSourceFieldName() + "(max)", ValueMetaInterface.TYPE_NUMBER );
       }
-      if ( function.getCalcMedian() ) {
-        assertContains( valueMetas, function.getSourceFieldName() + "(median)", ValueMetaInterface.TYPE_NUMBER );
-      }
-      if ( function.getCalcPercentile() >= 0 ) {
-        NumberFormat pF = NumberFormat.getInstance();
-        pF.setMaximumFractionDigits( 2 );
-        String res = pF.format( function.getCalcPercentile() * 100 );
-        assertContains( valueMetas, function.getSourceFieldName() + "(" + res + "th percentile)",
-            ValueMetaInterface.TYPE_NUMBER );
+      for ( UnivariateStatsValueProducer producer : producers ) {
+        if ( producer instanceof PercentileValueCalculator ) {
+          PercentileValueCalculator calculator = (PercentileValueCalculator) producer;
+          double percentile = calculator.getPercentile();
+          if ( percentile == 0.5 ) {
+            assertContains( valueMetas, function.getSourceFieldName() + "(median)", ValueMetaInterface.TYPE_NUMBER );
+          } else if ( percentile == 0.55 ) {
+            assertContains( valueMetas, function.getSourceFieldName() + "(" + percentile + "th percentile)",
+                ValueMetaInterface.TYPE_NUMBER );
+          }
+        }
       }
     }
   }
