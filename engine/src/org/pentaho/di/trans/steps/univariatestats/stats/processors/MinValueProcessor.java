@@ -8,7 +8,7 @@ import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessor
 @UnivariateValueProcessorPlugin( id = MinValueProcessor.ID, name = MinValueProcessor.NAME )
 public class MinValueProcessor extends AbstractValueProducer implements UnivariateStatsValueProcessor {
   public static final String ID = "MIN_VALUE";
-  public static final String NAME = "min";
+  public static final String NAME = "MinValueProcessor.Name";
 
   private double min = Double.MAX_VALUE;
 

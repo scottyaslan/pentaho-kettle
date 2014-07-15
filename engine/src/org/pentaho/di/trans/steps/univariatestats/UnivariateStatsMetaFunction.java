@@ -254,6 +254,7 @@ public class UnivariateStatsMetaFunction implements Cloneable {
    *          an UnivarateStatsMetaFunction to compare against
    * @return true if this Object and the supplied one are the same
    */
+  @Override
   public boolean equals( Object obj ) {
     if ( ( obj != null ) && ( obj.getClass().equals( this.getClass() ) ) ) {
       UnivariateStatsMetaFunction mf = (UnivariateStatsMetaFunction) obj;
@@ -334,6 +335,7 @@ public class UnivariateStatsMetaFunction implements Cloneable {
    * 
    * @return a copy of this UnivariateStatsMetaFunction.
    */
+  @Override
   public Object clone() {
     try {
       UnivariateStatsMetaFunction retval = (UnivariateStatsMetaFunction) super.clone();

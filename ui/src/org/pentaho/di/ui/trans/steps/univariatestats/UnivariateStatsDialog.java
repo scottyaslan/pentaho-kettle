@@ -22,9 +22,11 @@
 
 package org.pentaho.di.ui.trans.steps.univariatestats;
 
-import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +51,9 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettlePluginException;
+import org.pentaho.di.core.plugins.PluginInterface;
+import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
@@ -58,13 +63,20 @@ import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsMeta;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsMetaFunction;
+import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueCalculator;
+import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProducer;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPlugin;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPluginType;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPlugin;
+import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPluginType;
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 import org.pentaho.di.ui.core.widget.TableView;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
 
 /**
  * The UI class for the UnivariateStats transform
- *
+ * 
  * @author Mark Hall (mhall{[at]}pentaho.org
  * @version 1.0
  */
@@ -105,7 +117,7 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
 
   /**
    * Open the dialog
-   *
+   * 
    * @return the step name
    */
   public String open() {
@@ -167,41 +179,43 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
     m_wlFields.setLayoutData( m_fdlFields );
 
     final int fieldsRows =
-      ( m_currentMeta.getInputFieldMetaFunctions() != null ) ? m_currentMeta.getNumFieldsToProcess() : 1;
+        ( m_currentMeta.getInputFieldMetaFunctions() != null ) ? m_currentMeta.getNumFieldsToProcess() : 1;
 
-    m_colinf =
-      new ColumnInfo[] {
-        new ColumnInfo(
-          BaseMessages.getString( PKG, "UnivariateStatsDialog.InputFieldColumn.Column" ),
-          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, true ),
-        new ColumnInfo(
-          BaseMessages.getString( PKG, "UnivariateStatsDialog.NColumn.Column" ),
-          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "True", "False" }, true ),
-        new ColumnInfo(
-          BaseMessages.getString( PKG, "UnivariateStatsDialog.MeanColumn.Column" ),
-          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "True", "False" }, true ),
-        new ColumnInfo(
-          BaseMessages.getString( PKG, "UnivariateStatsDialog.StdDevColumn.Column" ),
-          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "True", "False" }, true ),
-        new ColumnInfo(
-          BaseMessages.getString( PKG, "UnivariateStatsDialog.MinColumn.Column" ),
-          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "True", "False" }, true ),
-        new ColumnInfo(
-          BaseMessages.getString( PKG, "UnivariateStatsDialog.MaxColumn.Column" ),
-          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "True", "False" }, true ),
-        new ColumnInfo(
-          BaseMessages.getString( PKG, "UnivariateStatsDialog.MedianColumn.Column" ),
-          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "True", "False" }, true ),
-        new ColumnInfo(
-          BaseMessages.getString( PKG, "UnivariateStatsDialog.PercentileColumn.Column" ),
-          ColumnInfo.COLUMN_TYPE_TEXT, false ),
-        new ColumnInfo(
-          BaseMessages.getString( PKG, "UnivariateStatsDialog.InterpolateColumn.Column" ),
-          ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "True", "False" }, true ) };
+    List<ColumnInfo> columnInfos = new ArrayList<ColumnInfo>();
+    columnInfos.add( new ColumnInfo( BaseMessages.getString( PKG, "UnivariateStatsDialog.InputFieldColumn.Column" ),
+        ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, true ) );
+    for ( PluginInterface plugin : getPlugins() ) {
+      try {
+        UnivariateStatsValueProducer producer =
+            (UnivariateStatsValueProducer) PluginRegistry.getInstance().loadClass( plugin );
+        if ( shouldShow( producer ) ) {
+          Map<String, Integer> parameters = getParameters( producer );
+          if ( parameters.size() == 0 ) {
+            columnInfos.add( new ColumnInfo( BaseMessages.getString( producer.getClass(), getName( producer ) ),
+              ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "True", "False" }, true ) );
+          } else if ( parameters.size() == 1 ) {
+            columnInfos.add( new ColumnInfo( BaseMessages.getString( producer.getClass(), getName( producer ) ),
+                ColumnInfo.COLUMN_TYPE_TEXT, false ) );
+          } else {
+            List<String> parametersNames = new ArrayList<String>( parameters.keySet() );
+            Collections.sort( parametersNames );
+            for ( String parameter : parametersNames ) {
+              columnInfos.add( new ColumnInfo( BaseMessages.getString( producer.getClass(), BaseMessages.getString(
+                  producer.getClass(), parameter ) ), ColumnInfo.COLUMN_TYPE_TEXT, false ) );
+            }
+          }
+        }
+      } catch ( KettlePluginException e1 ) {
+        // TODO Auto-generated catch block
+        e1.printStackTrace();
+      }
+    }
+
+    m_colinf = columnInfos.toArray( new ColumnInfo[columnInfos.size()] );
 
     m_wFields =
-      new TableView(
-        transMeta, shell, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, m_colinf, fieldsRows, lsMod, props );
+        new TableView( transMeta, shell, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI, m_colinf, fieldsRows, lsMod,
+            props );
 
     m_fdFields = new FormData();
     m_fdFields.left = new FormAttachment( 0, 0 );
@@ -316,16 +330,77 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
     m_colinf[0].setComboValues( fieldNames );
   }
 
+  private String getId( UnivariateStatsValueProducer producer ) {
+    if ( producer instanceof UnivariateStatsValueProcessor ) {
+      return producer.getClass().getAnnotation( UnivariateValueProcessorPlugin.class ).id();
+    } else if ( producer instanceof UnivariateStatsValueCalculator ) {
+      return producer.getClass().getAnnotation( UnivariateValueCalculatorPlugin.class ).id();
+    } else {
+      return null;
+    }
+  }
+
+  private String getName( UnivariateStatsValueProducer producer ) {
+    if ( producer instanceof UnivariateStatsValueProcessor ) {
+      return producer.getClass().getAnnotation( UnivariateValueProcessorPlugin.class ).name();
+    } else if ( producer instanceof UnivariateStatsValueCalculator ) {
+      return producer.getClass().getAnnotation( UnivariateValueCalculatorPlugin.class ).name();
+    } else {
+      return null;
+    }
+  }
+
+  private Map<String, Integer> getParameters( UnivariateStatsValueProducer producer ) {
+    Map<String, Integer> result = new HashMap<String, Integer>();
+    if ( producer instanceof UnivariateStatsValueProcessor ) {
+      UnivariateValueProcessorPlugin univariateValueProcessorPlugin =
+          producer.getClass().getAnnotation( UnivariateValueProcessorPlugin.class );
+      for ( int i = 0; i < univariateValueProcessorPlugin.parameterNames().length; i++ ) {
+        result.put( univariateValueProcessorPlugin.parameterNames()[i],
+            univariateValueProcessorPlugin.parameterTypes()[i] );
+      }
+    } else if ( producer instanceof UnivariateStatsValueCalculator ) {
+      UnivariateValueCalculatorPlugin univariateValueCalculatorPlugin =
+          producer.getClass().getAnnotation( UnivariateValueCalculatorPlugin.class );
+      for ( int i = 0; i < univariateValueCalculatorPlugin.parameterNames().length; i++ ) {
+        result.put( univariateValueCalculatorPlugin.parameterNames()[i], univariateValueCalculatorPlugin
+            .parameterTypes()[i] );
+      }
+    }
+    return result;
+  }
+
+  private boolean shouldShow( UnivariateStatsValueProducer producer ) {
+    if ( producer instanceof UnivariateStatsValueProcessor ) {
+      return !producer.getClass().getAnnotation( UnivariateValueProcessorPlugin.class ).hidden();
+    }
+    return true;
+  }
+
+  private List<PluginInterface> getPlugins() {
+    Set<PluginInterface> ids = new HashSet<PluginInterface>();
+    ids.addAll( PluginRegistry.getInstance().getPlugins( UnivariateValueProcessorPluginType.class ) );
+    ids.addAll( PluginRegistry.getInstance().getPlugins( UnivariateValueCalculatorPluginType.class ) );
+    List<PluginInterface> result = new ArrayList<PluginInterface>( ids );
+    Collections.sort( result, new Comparator<PluginInterface>() {
+
+      @Override
+      public int compare( PluginInterface o1, PluginInterface o2 ) {
+        return o1.getIds()[0].compareTo( o2.getIds()[0] );
+      }
+    } );
+    return result;
+  }
+
   /**
    * Copy information from the meta-data m_currentMeta to the dialog fields.
    */
   public void getData() {
 
     if ( m_currentMeta.getInputFieldMetaFunctions() != null ) {
-      for ( int i = 0; i < m_currentMeta.getNumFieldsToProcess(); i++ ) {
-        UnivariateStatsMetaFunction fn = m_currentMeta.getInputFieldMetaFunctions()[i];
+      for ( UnivariateStatsMetaFunction fn : m_currentMeta.getInputFieldMetaFunctions() ) {
 
-        TableItem item = m_wFields.table.getItem( i );
+       /* TableItem item = m_wFields.table.getItem( i );
 
         item.setText( 1, Const.NVL( fn.getSourceFieldName(), "" ) );
         item.setText( 2, Const.NVL( ( fn.getCalcN() ) ? "True" : "False", "" ) );
@@ -340,7 +415,7 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
         String res = ( p < 0 ) ? "" : pF.format( p * 100 );
         item.setText( 8, Const.NVL( res, "" ) );
 
-        item.setText( 9, Const.NVL( ( fn.getInterpolatePercentile() ) ? "True" : "False", "" ) );
+        item.setText( 9, Const.NVL( ( fn.getInterpolatePercentile() ) ? "True" : "False", "" ) );*/
       }
 
       m_wFields.setRowNums();
@@ -394,9 +469,9 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
       }
       boolean interpolate = item.getText( 9 ).equalsIgnoreCase( "True" );
 
-      //CHECKSTYLE:Indentation:OFF
-      m_currentMeta.getInputFieldMetaFunctions()[i] = new UnivariateStatsMetaFunction(
-        inputFieldName, n, mean, stdDev, min, max, median, percentile, interpolate );
+      // CHECKSTYLE:Indentation:OFF
+      m_currentMeta.getInputFieldMetaFunctions()[i] =
+          new UnivariateStatsMetaFunction( inputFieldName, n, mean, stdDev, min, max, median, percentile, interpolate );
     }
 
     if ( !m_originalMeta.equals( m_currentMeta ) ) {

@@ -29,5 +29,7 @@ public @interface UnivariateValueProcessorPlugin {
 
   String[] parameterNames() default { };
 
-  int [] parameterTypes() default { };
+  int[] parameterTypes() default { };
+
+  boolean hidden() default false;
 }

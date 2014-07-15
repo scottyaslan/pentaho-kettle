@@ -6,7 +6,7 @@ import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.plugins.BasePluginType;
 import org.pentaho.di.core.plugins.PluginMainClassType;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
-import org.pentaho.di.trans.steps.univariatestats.stats.processors.CacheingValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.CachingValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.CountValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.MaxValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.MinValueProcessor;
@@ -29,7 +29,7 @@ public class UnivariateValueProcessorPluginType extends BasePluginType {
 
   @Override
   protected void registerNatives() throws KettlePluginException {
-    handlePluginAnnotation( CacheingValueProcessor.class, CacheingValueProcessor.class
+    handlePluginAnnotation( CachingValueProcessor.class, CachingValueProcessor.class
         .getAnnotation( UnivariateValueProcessorPlugin.class ), new ArrayList<String>(), true, null );
     handlePluginAnnotation( CountValueProcessor.class, CountValueProcessor.class
         .getAnnotation( UnivariateValueProcessorPlugin.class ), new ArrayList<String>(), true, null );

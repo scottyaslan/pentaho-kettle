@@ -10,14 +10,14 @@ import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPlugin;
 
-@UnivariateValueProcessorPlugin( id = CacheingValueProcessor.ID, name = CacheingValueProcessor.NAME )
-public class CacheingValueProcessor extends AbstractValueProducer implements UnivariateStatsValueProcessor {
+@UnivariateValueProcessorPlugin( id = CachingValueProcessor.ID, name = CachingValueProcessor.NAME )
+public class CachingValueProcessor extends AbstractValueProducer implements UnivariateStatsValueProcessor {
   public static final String ID = "CACHE_AND_SORT";
   public static final String NAME = "Cache and sort";
   private final List<Double> cache;
   private boolean sorted = false;
 
-  public CacheingValueProcessor( ) {
+  public CachingValueProcessor( ) {
     super( NAME, ValueMetaInterface.TYPE_NONE );
     cache = new ArrayList<Double>();
   }

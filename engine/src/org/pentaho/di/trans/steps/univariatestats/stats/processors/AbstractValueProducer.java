@@ -1,5 +1,6 @@
 package org.pentaho.di.trans.steps.univariatestats.stats.processors;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -64,7 +65,8 @@ public abstract class AbstractValueProducer implements UnivariateStatsValueProdu
   }
 
   @Override
-  public void loadXML( Node producerNode, List<DatabaseMeta> databases, IMetaStore metaStore ) throws KettleXMLException {
+  public void loadXML( Node producerNode, List<DatabaseMeta> databases, IMetaStore metaStore )
+    throws KettleXMLException {
     // Noop
   }
 
@@ -78,5 +80,10 @@ public abstract class AbstractValueProducer implements UnivariateStatsValueProdu
   public void readRep( Repository rep, IMetaStore metaStore, ObjectId id_step, List<DatabaseMeta> databases, int nr,
       String prefix ) throws KettleException {
     // Noop
+  }
+
+  @Override
+  public Map<String, Object> getParameters() {
+    return new HashMap<String, Object>();
   }
 }

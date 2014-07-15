@@ -18,18 +18,19 @@ import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueCalculator
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueCalculatorPlugin;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.AbstractValueProducer;
-import org.pentaho.di.trans.steps.univariatestats.stats.processors.CacheingValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.stats.processors.CachingValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.CountValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.MaxValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.MinValueProcessor;
 import org.pentaho.metastore.api.IMetaStore;
 import org.w3c.dom.Node;
 
-@UnivariateValueCalculatorPlugin( id = PercentileValueCalculator.ID, name = PercentileValueCalculator.NAME,
-    requiredProcessors = { CountValueProcessor.ID, MinValueProcessor.ID, MaxValueProcessor.ID,
-      CacheingValueProcessor.ID }, parameterNames = { PercentileValueCalculator.PERCENTILE_NAME,
-      PercentileValueCalculator.INTERPOLATE_NAME }, parameterTypes = { PercentileValueCalculator.PERCENTILE_TYPE,
-      PercentileValueCalculator.INTERPOLATE_TYPE } )
+@UnivariateValueCalculatorPlugin(
+    id = PercentileValueCalculator.ID,
+    name = PercentileValueCalculator.NAME,
+    requiredProcessors = { CountValueProcessor.ID, MinValueProcessor.ID, MaxValueProcessor.ID, CachingValueProcessor.ID },
+    parameterNames = { PercentileValueCalculator.PERCENTILE_NAME, PercentileValueCalculator.INTERPOLATE_NAME },
+    parameterTypes = { PercentileValueCalculator.PERCENTILE_TYPE, PercentileValueCalculator.INTERPOLATE_TYPE } )
 public class PercentileValueCalculator extends AbstractValueProducer implements UnivariateStatsValueCalculator {
   public static final String ID = "PERCENTILE_VALUE_CALCULATOR";
   public static final String NAME = "percentile";
@@ -61,6 +62,7 @@ public class PercentileValueCalculator extends AbstractValueProducer implements 
 
   @Override
   public void setParameters( Map<String, Object> parameters ) {
+    super.setParameters( parameters );
     percentile = (Double) parameters.get( PERCENTILE_NAME );
     setName( PercentileValueCalculator.getName( percentile ) );
     if ( parameters.containsKey( INTERPOLATE_NAME ) ) {
@@ -68,6 +70,14 @@ public class PercentileValueCalculator extends AbstractValueProducer implements 
     } else {
       interpolate = false;
     }
+  }
+
+  @Override
+  public Map<String, Object> getParameters() {
+    Map<String, Object> result = super.getParameters();
+    result.put( PERCENTILE_NAME, percentile );
+    result.put( INTERPOLATE_NAME, interpolate );
+    return result;
   }
 
   @Override
@@ -81,7 +91,7 @@ public class PercentileValueCalculator extends AbstractValueProducer implements 
     UnivariateStatsValueProcessor countProducer = producerMap.get( CountValueProcessor.ID );
     UnivariateStatsValueProcessor minProducer = producerMap.get( MinValueProcessor.ID );
     UnivariateStatsValueProcessor maxProducer = producerMap.get( MaxValueProcessor.ID );
-    UnivariateStatsValueProcessor cacheProducer = producerMap.get( CacheingValueProcessor.ID );
+    UnivariateStatsValueProcessor cacheProducer = producerMap.get( CachingValueProcessor.ID );
 
     double count = countProducer.getOutputValueMeta().getNumber( countProducer.getValue() ).doubleValue();
     double min = minProducer.getOutputValueMeta().getNumber( minProducer.getValue() ).doubleValue();

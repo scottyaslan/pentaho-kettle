@@ -24,6 +24,8 @@ public interface UnivariateStatsValueProducer {
 
   public void setParameters( Map<String, Object> parameters );
 
+  public Map<String, Object> getParameters( );
+
   public String getXml();
 
   public void loadXML( Node producerNode, List<DatabaseMeta> databases, IMetaStore metaStore ) throws KettleXMLException;
