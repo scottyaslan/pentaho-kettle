@@ -30,10 +30,12 @@ import org.w3c.dom.Node;
     name = PercentileValueCalculator.NAME,
     requiredProcessors = { CountValueProcessor.ID, MinValueProcessor.ID, MaxValueProcessor.ID, CachingValueProcessor.ID },
     parameterNames = { PercentileValueCalculator.PERCENTILE_NAME, PercentileValueCalculator.INTERPOLATE_NAME },
-    parameterTypes = { PercentileValueCalculator.PERCENTILE_TYPE, PercentileValueCalculator.INTERPOLATE_TYPE } )
+    parameterTypes = { PercentileValueCalculator.PERCENTILE_TYPE, PercentileValueCalculator.INTERPOLATE_TYPE },
+    provides = PercentileValueCalculator.PROVIDES )
 public class PercentileValueCalculator extends AbstractValueProducer implements UnivariateStatsValueCalculator {
   public static final String ID = "PERCENTILE_VALUE_CALCULATOR";
-  public static final String NAME = "percentile";
+  public static final String NAME = "PercentileValueCalculator.Name";
+  public static final String PROVIDES = "PercentileValueCalculator.Provides";
 
   public static final String PERCENTILE_NAME = "PercentileValueCalculator.Percentile.Name";
   public static final int PERCENTILE_TYPE = ValueMetaInterface.TYPE_NUMBER;

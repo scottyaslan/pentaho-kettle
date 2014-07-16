@@ -23,7 +23,7 @@ import com.clearspring.analytics.stream.quantile.TDigest;
     parameterTypes = { TDigestValueProcessor.COMPRESSION_TYPE } )
 public class TDigestValueProcessor extends AbstractValueProducer implements UnivariateStatsValueProcessor {
   public static final String ID = "TDIGEST";
-  public static final String NAME = "tdigest";
+  public static final String NAME = "TDigestValueProcessor.Name";
 
   public static final String COMPRESSION_NAME = "TDigestValueProcessor.Compression.Name";
   public static final int COMPRESSION_TYPE = ValueMetaInterface.TYPE_NUMBER;

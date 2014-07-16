@@ -31,4 +31,6 @@ public @interface UnivariateValueCalculatorPlugin {
   int[] parameterTypes() default { };
 
   String[] requiredProcessors() default { };
+
+  String provides() default "";
 }

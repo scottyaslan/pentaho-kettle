@@ -18,7 +18,7 @@ import org.pentaho.di.trans.steps.univariatestats.stats.processors.SumValueProce
     requiredProcessors = { CountValueProcessor.ID, SumValueProcessor.ID, SumOfSquaresValueProcessor.ID } )
 public class StandardDeviationCalculator extends AbstractValueProducer implements UnivariateStatsValueCalculator {
   public static final String ID = "STANDARD_DEVIATION_VALUE_CALCULATOR";
-  public static final String NAME = "stdDev";
+  public static final String NAME = "StandardDeviationCalculator.Name";
 
   private double stdDev = Double.NaN;
 

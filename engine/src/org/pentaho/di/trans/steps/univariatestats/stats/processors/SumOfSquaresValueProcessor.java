@@ -8,7 +8,7 @@ import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessor
 @UnivariateValueProcessorPlugin( id = SumOfSquaresValueProcessor.ID, name = SumOfSquaresValueProcessor.NAME )
 public class SumOfSquaresValueProcessor extends AbstractValueProducer implements UnivariateStatsValueProcessor {
   public static final String ID = "SUM_OF_SQUARES";
-  public static final String NAME = "sumOfSquares";
+  public static final String NAME = "SumOfSquaresValueProcessor.Name";
 
   private double sumSq = 0;
 

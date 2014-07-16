@@ -10,8 +10,12 @@ public class UnivariateStatsValueConfig {
   private final Map<String, Object> parameters;
 
   public UnivariateStatsValueConfig( String id ) {
+    this( id, new HashMap<String, Object>() );
+  }
+
+  public UnivariateStatsValueConfig( String id, Map<String, Object> parameters ) {
     this.id = id;
-    this.parameters = new HashMap<String, Object>();
+    this.parameters = parameters;
   }
 
   public String getId() {

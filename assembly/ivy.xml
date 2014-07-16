@@ -25,22 +25,22 @@
     </dependency>
     
     <!-- Kettle plugin dependencies-->
-    <dependency org="${ivy.artifact.group}" name="market" rev="${project.revision}" changing="true" conf="plugins->default">
+    <dependency org="${ivy.artifact.group}" name="market" rev="${dependency.kettle.plugin.revision}" changing="true" conf="plugins->default">
         <artifact name="market" type="zip"/>
     </dependency>
-    <dependency org="${ivy.artifact.group}" name="kettle-gpload-plugin" rev="${project.revision}" changing="true" conf="plugins->default">
+    <dependency org="${ivy.artifact.group}" name="kettle-gpload-plugin" rev="${dependency.kettle.plugin.revision}" changing="true" conf="plugins->default">
         <artifact name="kettle-gpload-plugin" type="zip"/>
     </dependency>
-    <dependency org="${ivy.artifact.group}" name="kettle-hl7-plugin" rev="${project.revision}" changing="true" conf="plugins->default">
+    <dependency org="${ivy.artifact.group}" name="kettle-hl7-plugin" rev="${dependency.kettle.plugin.revision}" changing="true" conf="plugins->default">
         <artifact name="kettle-hl7-plugin" type="zip"/>
     </dependency>
-    <dependency org="${ivy.artifact.group}" name="kettle-openerp-plugin" rev="${project.revision}" changing="true" conf="plugins->default">
+    <dependency org="${ivy.artifact.group}" name="kettle-openerp-plugin" rev="${dependency.kettle.plugin.revision}" changing="true" conf="plugins->default">
         <artifact name="kettle-openerp-plugin" type="zip"/>
     </dependency>
-    <dependency org="${ivy.artifact.group}" name="kettle-palo-plugin" rev="${project.revision}" changing="true" conf="plugins->default">
+    <dependency org="${ivy.artifact.group}" name="kettle-palo-plugin" rev="${dependency.kettle.plugin.revision}" changing="true" conf="plugins->default">
         <artifact name="kettle-palo-plugin" type="zip"/>
     </dependency>
-    <dependency org="${ivy.artifact.group}" name="kettle5-log4j-plugin" rev="${project.revision}" changing="true" conf="plugins->default">
+    <dependency org="${ivy.artifact.group}" name="kettle5-log4j-plugin" rev="${dependency.kettle.plugin.revision}" changing="true" conf="plugins->default">
         <artifact name="kettle5-log4j-plugin" type="zip"/>
     </dependency>
     

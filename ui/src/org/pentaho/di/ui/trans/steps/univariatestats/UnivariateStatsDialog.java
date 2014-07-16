@@ -51,7 +51,6 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.plugins.PluginInterface;
 import org.pentaho.di.core.plugins.PluginRegistry;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -103,11 +102,12 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
   // holds the names of the fields entering this step
   private Map<String, Integer> m_inputFields;
   private ColumnInfo[] m_colinf;
+  private final UnivariateProducerBindings bindings;
 
   public UnivariateStatsDialog( Shell parent, Object in, TransMeta tr, String sname ) {
 
     super( parent, (BaseStepMeta) in, tr, sname );
-
+    bindings = new UnivariateProducerBindings();
     // The order here is important...
     // m_currentMeta is looked at for changes
     m_currentMeta = (UnivariateStatsMeta) in;
@@ -184,32 +184,7 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
     List<ColumnInfo> columnInfos = new ArrayList<ColumnInfo>();
     columnInfos.add( new ColumnInfo( BaseMessages.getString( PKG, "UnivariateStatsDialog.InputFieldColumn.Column" ),
         ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "" }, true ) );
-    for ( PluginInterface plugin : getPlugins() ) {
-      try {
-        UnivariateStatsValueProducer producer =
-            (UnivariateStatsValueProducer) PluginRegistry.getInstance().loadClass( plugin );
-        if ( shouldShow( producer ) ) {
-          Map<String, Integer> parameters = getParameters( producer );
-          if ( parameters.size() == 0 ) {
-            columnInfos.add( new ColumnInfo( BaseMessages.getString( producer.getClass(), getName( producer ) ),
-              ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "True", "False" }, true ) );
-          } else if ( parameters.size() == 1 ) {
-            columnInfos.add( new ColumnInfo( BaseMessages.getString( producer.getClass(), getName( producer ) ),
-                ColumnInfo.COLUMN_TYPE_TEXT, false ) );
-          } else {
-            List<String> parametersNames = new ArrayList<String>( parameters.keySet() );
-            Collections.sort( parametersNames );
-            for ( String parameter : parametersNames ) {
-              columnInfos.add( new ColumnInfo( BaseMessages.getString( producer.getClass(), BaseMessages.getString(
-                  producer.getClass(), parameter ) ), ColumnInfo.COLUMN_TYPE_TEXT, false ) );
-            }
-          }
-        }
-      } catch ( KettlePluginException e1 ) {
-        // TODO Auto-generated catch block
-        e1.printStackTrace();
-      }
-    }
+    columnInfos.addAll( bindings.getColumnInfos() );
 
     m_colinf = columnInfos.toArray( new ColumnInfo[columnInfos.size()] );
 
@@ -398,8 +373,10 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
   public void getData() {
 
     if ( m_currentMeta.getInputFieldMetaFunctions() != null ) {
-      for ( UnivariateStatsMetaFunction fn : m_currentMeta.getInputFieldMetaFunctions() ) {
-
+      for ( int i = 0; i < m_currentMeta.getNumFieldsToProcess(); i++ ) {
+        TableItem item = m_wFields.table.getItem( i );
+        UnivariateStatsMetaFunction fn = m_currentMeta.getInputFieldMetaFunctions()[i];
+        bindings.setUpTable( fn.getRequestedValues(), item );
        /* TableItem item = m_wFields.table.getItem( i );
 
         item.setText( 1, Const.NVL( fn.getSourceFieldName(), "" ) );
@@ -409,7 +386,7 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
         item.setText( 5, Const.NVL( ( fn.getCalcMin() ) ? "True" : "False", "" ) );
         item.setText( 6, Const.NVL( ( fn.getCalcMax() ) ? "True" : "False", "" ) );
         item.setText( 7, Const.NVL( ( fn.getCalcMedian() ) ? "True" : "False", "" ) );
-        double p = fn.getCalcPercentile();
+        double p = fn.getCalcPercentile(a);
         NumberFormat pF = NumberFormat.getInstance();
         pF.setMaximumFractionDigits( 2 );
         String res = ( p < 0 ) ? "" : pF.format( p * 100 );
@@ -470,8 +447,8 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
       boolean interpolate = item.getText( 9 ).equalsIgnoreCase( "True" );
 
       // CHECKSTYLE:Indentation:OFF
-      m_currentMeta.getInputFieldMetaFunctions()[i] =
-          new UnivariateStatsMetaFunction( inputFieldName, n, mean, stdDev, min, max, median, percentile, interpolate );
+      m_currentMeta.getInputFieldMetaFunctions()[i] = new UnivariateStatsMetaFunction( inputFieldName );
+      m_currentMeta.getInputFieldMetaFunctions()[i].setProducers( bindings.getProducers( item ) );
     }
 
     if ( !m_originalMeta.equals( m_currentMeta ) ) {

@@ -408,6 +408,10 @@ public class UnivariateStatsMetaFunction implements Cloneable {
     return result;
   }
 
+  public void setProducers( List<UnivariateStatsValueProducer> producers ) {
+    valueProducers = producers;
+  }
+
   public void addConfig( UnivariateStatsValueConfig config ) throws KettlePluginException {
     PluginInterface producerPlugin =
         PluginRegistry.getInstance().getPlugin( UnivariateValueCalculatorPluginType.class, config.getId() );

@@ -7,7 +7,7 @@ import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessor
 @UnivariateValueProcessorPlugin( id = CountValueProcessor.ID, name = CountValueProcessor.NAME )
 public class CountValueProcessor extends AbstractValueProducer implements UnivariateStatsValueProcessor {
   public static final String ID = "COUNT";
-  public static final String NAME = "N";
+  public static final String NAME = "CountValueProcessor.Name";
   private long count = 0;
 
   public CountValueProcessor( ) {

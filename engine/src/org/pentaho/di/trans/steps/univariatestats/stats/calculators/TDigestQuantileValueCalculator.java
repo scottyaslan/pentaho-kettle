@@ -26,14 +26,11 @@ import com.clearspring.analytics.stream.quantile.TDigest;
 
 @UnivariateValueCalculatorPlugin( id = TDigestQuantileValueCalculator.ID, name = TDigestQuantileValueCalculator.NAME,
     requiredProcessors = { TDigestValueProcessor.ID },
-    parameterNames = { TDigestQuantileValueCalculator.PERCENTILE_NAME },
-    parameterTypes = { TDigestQuantileValueCalculator.PERCENTILE_TYPE } )
+    parameterNames = { PercentileValueCalculator.PERCENTILE_NAME },
+    parameterTypes = { PercentileValueCalculator.PERCENTILE_TYPE }, provides = PercentileValueCalculator.PROVIDES )
 public class TDigestQuantileValueCalculator extends AbstractValueProducer implements UnivariateStatsValueCalculator {
   public static final String ID = "T_DIGEST_PERCENTILE_VALUE_CALCULATOR";
-  public static final String NAME = "percentile";
-
-  public static final String PERCENTILE_NAME = "PercentileValueCalculator.Percentile.Name";
-  public static final int PERCENTILE_TYPE = ValueMetaInterface.TYPE_NUMBER;
+  public static final String NAME = "TDigestQuantileValueCalculator.Name";
 
   double percentile = 0;
   double quantileResult = Double.NaN;
@@ -57,14 +54,14 @@ public class TDigestQuantileValueCalculator extends AbstractValueProducer implem
   @Override
   public void setParameters( Map<String, Object> parameters ) {
     super.setParameters( parameters );
-    percentile = (Double) parameters.get( PERCENTILE_NAME );
+    percentile = (Double) parameters.get( PercentileValueCalculator.PERCENTILE_NAME );
     setName( PercentileValueCalculator.getName( percentile ) );
   }
 
   @Override
   public Map<String, Object> getParameters() {
     Map<String, Object> result = super.getParameters();
-    result.put( PERCENTILE_NAME, percentile );
+    result.put( PercentileValueCalculator.PERCENTILE_NAME, percentile );
     return result;
   }
 

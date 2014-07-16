@@ -16,12 +16,12 @@ import org.pentaho.di.trans.steps.univariatestats.stats.processors.SumValueProce
     CountValueProcessor.ID, SumValueProcessor.ID } )
 public class MeanValueCalculator extends AbstractValueProducer implements UnivariateStatsValueCalculator {
   public static final String ID = "MEAN_VALUE_CALCULATOR";
-  public static final String NAME = "mean";
+  public static final String NAME = "MeanValueCalculator.Name";
 
   private double count;
   private double sum;
 
-  public MeanValueCalculator( ) {
+  public MeanValueCalculator() {
     super( NAME, ValueMetaInterface.TYPE_NUMBER );
   }
 
