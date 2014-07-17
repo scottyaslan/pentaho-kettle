@@ -12,6 +12,7 @@ import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueCalculator;
@@ -33,8 +34,11 @@ import org.w3c.dom.Node;
     parameterTypes = { PercentileValueCalculator.PERCENTILE_TYPE, PercentileValueCalculator.INTERPOLATE_TYPE },
     provides = PercentileValueCalculator.PROVIDES )
 public class PercentileValueCalculator extends AbstractValueProducer implements UnivariateStatsValueCalculator {
+  private static final Class<?> PKG = PercentileValueCalculator.class;
   public static final String ID = "PERCENTILE_VALUE_CALCULATOR";
   public static final String NAME = "PercentileValueCalculator.Name";
+  public static final String MEDIAN_NAME = "PercentileValueCalculator.Median.Name";
+  public static final String TH_PERCENTILE_NAME = "PercentileValueCalculator.ThPercentile.Name";
   public static final String PROVIDES = "PercentileValueCalculator.Provides";
 
   public static final String PERCENTILE_NAME = "PercentileValueCalculator.Percentile.Name";
@@ -49,13 +53,18 @@ public class PercentileValueCalculator extends AbstractValueProducer implements 
 
   public static String getName( double percentile ) {
     if ( percentile == .5 ) {
-      return "median";
+      return BaseMessages.getString( PKG, MEDIAN_NAME );
     } else {
       NumberFormat pF = NumberFormat.getInstance();
       pF.setMaximumFractionDigits( 2 );
       String res = pF.format( percentile * 100 );
-      return res + "th percentile";
+      return BaseMessages.getString( PKG, TH_PERCENTILE_NAME, res );
     }
+  }
+
+  @Override
+  public String getName() {
+    return getName( percentile );
   }
 
   public PercentileValueCalculator() {

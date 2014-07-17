@@ -244,23 +244,23 @@ public class UnivariateStatsMetaTest {
         assertContains( valueMetas, function.getSourceFieldName() + "(N)", ValueMetaInterface.TYPE_INTEGER );
       }
       if ( producerClasses.contains( MeanValueCalculator.class ) ) {
-        assertContains( valueMetas, function.getSourceFieldName() + "(mean)", ValueMetaInterface.TYPE_NUMBER );
+        assertContains( valueMetas, function.getSourceFieldName() + "(Mean)", ValueMetaInterface.TYPE_NUMBER );
       }
       if ( producerClasses.contains( StandardDeviationCalculator.class ) ) {
-        assertContains( valueMetas, function.getSourceFieldName() + "(stdDev)", ValueMetaInterface.TYPE_NUMBER );
+        assertContains( valueMetas, function.getSourceFieldName() + "(Standard Deviation)", ValueMetaInterface.TYPE_NUMBER );
       }
       if ( producerClasses.contains( MinValueProcessor.class ) ) {
-        assertContains( valueMetas, function.getSourceFieldName() + "(min)", ValueMetaInterface.TYPE_NUMBER );
+        assertContains( valueMetas, function.getSourceFieldName() + "(Min)", ValueMetaInterface.TYPE_NUMBER );
       }
       if ( producerClasses.contains( MaxValueProcessor.class ) ) {
-        assertContains( valueMetas, function.getSourceFieldName() + "(max)", ValueMetaInterface.TYPE_NUMBER );
+        assertContains( valueMetas, function.getSourceFieldName() + "(Max)", ValueMetaInterface.TYPE_NUMBER );
       }
       for ( UnivariateStatsValueProducer producer : producers ) {
         if ( producer instanceof PercentileValueCalculator ) {
           PercentileValueCalculator calculator = (PercentileValueCalculator) producer;
           double percentile = calculator.getPercentile();
           if ( percentile == 0.5 ) {
-            assertContains( valueMetas, function.getSourceFieldName() + "(median)", ValueMetaInterface.TYPE_NUMBER );
+            assertContains( valueMetas, function.getSourceFieldName() + "(Median)", ValueMetaInterface.TYPE_NUMBER );
           } else if ( percentile == 0.55 ) {
             assertContains( valueMetas, function.getSourceFieldName() + "(" + percentile + "th percentile)",
                 ValueMetaInterface.TYPE_NUMBER );

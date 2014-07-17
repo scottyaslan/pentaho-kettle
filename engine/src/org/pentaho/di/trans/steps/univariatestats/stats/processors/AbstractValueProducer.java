@@ -10,6 +10,7 @@ import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaFactory;
+import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.repository.ObjectId;
 import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProducer;
@@ -28,12 +29,12 @@ public abstract class AbstractValueProducer implements UnivariateStatsValueProdu
   }
 
   protected String getValueMetaName() {
-    return origin + "(" + name + ")";
+    return origin + "(" + getName() + ")";
   }
 
   @Override
   public String getName() {
-    return name;
+    return BaseMessages.getString( getClass(), name );
   }
 
   public void setName( String name ) {
