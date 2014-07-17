@@ -168,5 +168,9 @@
     <dependency org="asm"                  name="asm"                   rev="3.2"           transitive="false"/>
     <dependency org="net.sf.saxon"         name="saxon-dom"             rev="9.1.0.8"       transitive="false"/>
     
+    <conflict org="${ivy.artifact.group}" module="kettle-core"          rev="${project.revision}"/>
+    <conflict org="${ivy.artifact.group}" module="kettle-engine"          rev="${project.revision}"/>
+    <conflict org="${ivy.artifact.group}" module="kettle-dbdialog"          rev="${project.revision}"/>
+    <conflict org="${ivy.artifact.group}" module="kettle-ui-swt"          rev="${project.revision}"/>
   </dependencies>
 </ivy-module>
