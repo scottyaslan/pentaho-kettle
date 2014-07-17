@@ -67,7 +67,7 @@ public class UnivariateStatsMetaFunction implements Cloneable {
   public static final String PREFIX_BASE = "Producer-";
 
   private String m_sourceFieldName;
-  private List<UnivariateStatsValueProducer> valueProducers = new ArrayList<UnivariateStatsValueProducer>();
+  private List<UnivariateStatsValueProducer> valueProducers;
 
   /**
    * Creates a new <code>UnivariateStatsMetaFunction</code>
@@ -95,6 +95,7 @@ public class UnivariateStatsMetaFunction implements Cloneable {
    */
   public UnivariateStatsMetaFunction( String sourceFieldName ) {
     m_sourceFieldName = sourceFieldName;
+    valueProducers = new ArrayList<UnivariateStatsValueProducer>();
   }
 
   public UnivariateStatsMetaFunction( String sourceFieldName, boolean n, boolean mean, boolean stdDev, boolean min,
@@ -104,55 +105,59 @@ public class UnivariateStatsMetaFunction implements Cloneable {
 
   public void legacyLoad( String sourceField, boolean count, boolean mean, boolean stdDev, boolean min, boolean max,
       boolean median, double percentile, boolean interpolate ) {
-    List<UnivariateStatsValueConfig> configs = new ArrayList<UnivariateStatsValueConfig>();
     m_sourceFieldName = sourceField;
+    valueProducers = new ArrayList<UnivariateStatsValueProducer>();
 
     if ( count ) {
-      configs.add( new UnivariateStatsValueConfig( CountValueProcessor.ID ) );
+      valueProducers.add( new CountValueProcessor() );
     }
     if ( mean ) {
-      configs.add( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
+      valueProducers.add( new MeanValueCalculator() );
     }
     if ( stdDev ) {
-      configs.add( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
+      valueProducers.add( new StandardDeviationCalculator() );
     }
     if ( min ) {
-      configs.add( new UnivariateStatsValueConfig( MinValueProcessor.ID ) );
+      valueProducers.add( new MinValueProcessor() );
     }
     if ( max ) {
-      configs.add( new UnivariateStatsValueConfig( MaxValueProcessor.ID ) );
+      valueProducers.add( new MaxValueProcessor() );
     }
-    UnivariateStatsValueConfig medianConfig = null;
+    PercentileValueCalculator medianConfig = null;
+    Map<String, Object> medianConfigParameters = new HashMap<String, Object>();
     if ( median ) {
-      medianConfig = new UnivariateStatsValueConfig( PercentileValueCalculator.ID );
-      medianConfig.setParameter( PercentileValueCalculator.PERCENTILE_NAME, 0.5 );
-      configs.add( medianConfig );
+      medianConfig = new PercentileValueCalculator();
+      medianConfigParameters.put( PercentileValueCalculator.PERCENTILE_NAME, 0.5 );
+      valueProducers.add( medianConfig );
     }
-    UnivariateStatsValueConfig percentileConfig = null;
+    PercentileValueCalculator percentileConfig = null;
+    Map<String, Object> percentileConfigParameters = new HashMap<String, Object>();
     try {
       double m_arbitraryPercentile = percentile;
       if ( m_arbitraryPercentile != -1 ) {
-        percentileConfig = new UnivariateStatsValueConfig( PercentileValueCalculator.ID );
-        percentileConfig.setParameter( PercentileValueCalculator.PERCENTILE_NAME, m_arbitraryPercentile );
-        configs.add( percentileConfig );
+        percentileConfig = new PercentileValueCalculator();
+        percentileConfigParameters.put( PercentileValueCalculator.PERCENTILE_NAME, m_arbitraryPercentile );
+        valueProducers.add( percentileConfig );
       }
     } catch ( Exception ex ) {
       // noop m_arbitraryPercentile = -1;
     }
     if ( interpolate ) {
       if ( medianConfig != null ) {
-        medianConfig.setParameter( PercentileValueCalculator.INTERPOLATE_NAME, true );
+        medianConfigParameters.put( PercentileValueCalculator.INTERPOLATE_NAME, true );
       }
       if ( percentileConfig != null ) {
-        percentileConfig.setParameter( PercentileValueCalculator.INTERPOLATE_NAME, true );
+        percentileConfigParameters.put( PercentileValueCalculator.INTERPOLATE_NAME, true );
       }
     }
-
-    try {
-      valueProducers = createUnivariateStatsValueProducerList( configs );
-    } catch ( KettlePluginException e ) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+    for ( UnivariateStatsValueProducer producer : valueProducers ) {
+      producer.setOrigin( getSourceFieldName() );
+    }
+    if ( medianConfig != null ) {
+      medianConfig.setParameters( medianConfigParameters );
+    }
+    if ( percentileConfig != null ) {
+      percentileConfig.setParameters( percentileConfigParameters );
     }
   }
 
@@ -397,33 +402,8 @@ public class UnivariateStatsMetaFunction implements Cloneable {
     return (UnivariateStatsValueProducer) PluginRegistry.getInstance().loadClass( producerPlugin );
   }
 
-  private List<UnivariateStatsValueProducer> createUnivariateStatsValueProducerList(
-      List<UnivariateStatsValueConfig> configs ) throws KettlePluginException {
-    List<UnivariateStatsValueProducer> result = new ArrayList<UnivariateStatsValueProducer>( configs.size() );
-    for ( UnivariateStatsValueConfig config : configs ) {
-      UnivariateStatsValueProducer producer = createProducer( config.getId() );
-      producer.setOrigin( getSourceFieldName() );
-      producer.setParameters( config.getParameters() );
-      result.add( producer );
-    }
-    return result;
-  }
-
   public void setProducers( List<UnivariateStatsValueProducer> producers ) {
     valueProducers = producers;
-  }
-
-  public void addConfig( UnivariateStatsValueConfig config ) throws KettlePluginException {
-    PluginInterface producerPlugin =
-        PluginRegistry.getInstance().getPlugin( UnivariateValueCalculatorPluginType.class, config.getId() );
-    if ( producerPlugin == null ) {
-      producerPlugin =
-          PluginRegistry.getInstance().getPlugin( UnivariateValueProcessorPluginType.class, config.getId() );
-    }
-    UnivariateStatsValueProducer producer =
-        (UnivariateStatsValueProducer) PluginRegistry.getInstance().loadClass( producerPlugin );
-    producer.setParameters( config.getParameters() );
-    valueProducers.add( producer );
   }
 
   public Map<String, UnivariateStatsValueProcessor> getProcessors( List<UnivariateStatsValueProducer> producers )

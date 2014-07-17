@@ -24,6 +24,8 @@ package org.pentaho.di.trans.steps.univariatestats;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
@@ -48,8 +50,7 @@ public class FieldIndexTest {
   @Test
   public void testCalculateDerived0Count() throws KettleStepException, KettleValueException, KettlePluginException {
     UnivariateStatsMetaFunction function = new UnivariateStatsMetaFunction( "test" );
-    function.addConfig( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
-    function.addConfig( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
+    function.setProducers( Arrays.<UnivariateStatsValueProducer>asList( new MeanValueCalculator(), new StandardDeviationCalculator() ) );
     FieldIndex fieldIndex = new FieldIndex( function, 1 );
     // Should be only mean and stdev
     Object[] output = fieldIndex.generateOutputValues();
@@ -61,8 +62,7 @@ public class FieldIndexTest {
   @Test
   public void testCalculateDerived1Count() throws KettleException {
     UnivariateStatsMetaFunction function = new UnivariateStatsMetaFunction( "test" );
-    function.addConfig( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
-    function.addConfig( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
+    function.setProducers( Arrays.<UnivariateStatsValueProducer>asList( new MeanValueCalculator(), new StandardDeviationCalculator() ) );
     FieldIndex fieldIndex = new FieldIndex( function, 1 );
     fieldIndex.processEntry( new ValueMetaNumber(), 250.0 );
     // Should be only mean and stdev
@@ -75,8 +75,7 @@ public class FieldIndexTest {
   @Test
   public void testCalculateDerived3CountPositiveStdDev() throws KettleException {
     UnivariateStatsMetaFunction function = new UnivariateStatsMetaFunction( "test" );
-    function.addConfig( new UnivariateStatsValueConfig( MeanValueCalculator.ID ) );
-    function.addConfig( new UnivariateStatsValueConfig( StandardDeviationCalculator.ID ) );
+    function.setProducers( Arrays.<UnivariateStatsValueProducer>asList( new MeanValueCalculator(), new StandardDeviationCalculator() ) );
     FieldIndex fieldIndex = new FieldIndex( function, 1 );
     fieldIndex.processEntry( new ValueMetaNumber(), 250.0 );
     fieldIndex.processEntry( new ValueMetaNumber(), 120.0 );
