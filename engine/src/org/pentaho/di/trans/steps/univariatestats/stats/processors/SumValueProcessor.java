@@ -1,6 +1,7 @@
 package org.pentaho.di.trans.steps.univariatestats.stats.processors;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPlugin;
@@ -24,7 +25,11 @@ public class SumValueProcessor extends AbstractValueProducer implements Univaria
   @Override
   public void process( ValueMetaInterface inputMeta, Object input ) throws KettleException {
     if ( input != null ) {
-      sum += inputMeta.getNumber( input ).doubleValue();
+      try {
+        sum += inputMeta.getNumber( input ).doubleValue();
+      } catch ( KettleValueException e ) {
+        // Ignore unparseable numbers
+      }
     }
   }
 }

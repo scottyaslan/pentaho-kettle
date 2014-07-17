@@ -12,14 +12,18 @@ public class MinValueProcessor extends AbstractValueProducer implements Univaria
 
   private double min = Double.MAX_VALUE;
 
-  public MinValueProcessor( ) {
+  public MinValueProcessor() {
     super( NAME, ValueMetaInterface.TYPE_NUMBER );
   }
 
   @Override
   public void process( ValueMetaInterface inputMeta, Object input ) throws KettleValueException {
     if ( input != null ) {
-      min = Math.min( min, inputMeta.getNumber( input ).doubleValue() );
+      try {
+        min = Math.min( min, inputMeta.getNumber( input ).doubleValue() );
+      } catch ( KettleValueException e ) {
+        // Ignore unparseable numbers
+      }
     }
   }
 

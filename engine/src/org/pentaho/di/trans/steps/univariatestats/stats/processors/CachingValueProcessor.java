@@ -2,10 +2,10 @@ package org.pentaho.di.trans.steps.univariatestats.stats.processors;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessorPlugin;
@@ -25,7 +25,11 @@ public class CachingValueProcessor extends AbstractValueProducer implements Univ
   @Override
   public void process( ValueMetaInterface inputMeta, Object input ) throws KettleException {
     if ( input != null ) {
-      cache.add( inputMeta.getNumber( input ).doubleValue() );
+      try {
+        cache.add( inputMeta.getNumber( input ).doubleValue() );
+      } catch ( KettleValueException e ) {
+        // Ignore values that cannot be turned into doubles
+      }
       sorted = false;
     }
   }
@@ -33,13 +37,7 @@ public class CachingValueProcessor extends AbstractValueProducer implements Univ
   @Override
   public Object getValue() {
     if ( !sorted ) {
-      Collections.sort( cache, new Comparator<Double>() {
-
-        @Override
-        public int compare( Double o1, Double o2 ) {
-          return o1.compareTo( o2 );
-        }
-      } );
+      Collections.sort( cache );
       sorted = true;
     }
     return cache;

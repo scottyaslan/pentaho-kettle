@@ -6,6 +6,7 @@ import java.util.Map;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.database.DatabaseMeta;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.xml.XMLHandler;
@@ -32,7 +33,7 @@ public class TDigestValueProcessor extends AbstractValueProducer implements Univ
   private TDigest tdigest = null;
 
   public TDigestValueProcessor() {
-    super( "TDIGEST", ValueMetaInterface.TYPE_NONE );
+    super( NAME, ValueMetaInterface.TYPE_NONE );
   }
 
   @Override
@@ -59,7 +60,11 @@ public class TDigestValueProcessor extends AbstractValueProducer implements Univ
       if ( tdigest == null ) {
         tdigest = new TDigest( compression );
       }
-      tdigest.add( inputMeta.getNumber( input ).doubleValue() );
+      try {
+        tdigest.add( inputMeta.getNumber( input ).doubleValue() );
+      } catch ( KettleValueException e ) {
+        // Ignore unparseable numbers
+      }
     }
   }
 
