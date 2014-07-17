@@ -32,7 +32,7 @@ public class UnivariateProducerBindings {
         UnivariateStatsValueProducer producer =
             (UnivariateStatsValueProducer) PluginRegistry.getInstance().loadClass( plugin );
         if ( shouldShow( producer ) ) {
-          String provides = getProvides( producer );
+          String provides = getProvides( producer.getClass() );
           UnivariateProducerBinding binding = null;
           if ( !Const.isEmpty( provides ) ) {
             binding = providesBindings.get( provides );
@@ -45,7 +45,7 @@ public class UnivariateProducerBindings {
             binding = new UnivariateProducerBinding();
             bindings.add( binding );
           }
-          binding.addProducer( producer );
+          binding.addProducerClass( producer.getClass() );
         }
       } catch ( KettlePluginException e1 ) {
         // TODO Auto-generated catch block
@@ -69,9 +69,9 @@ public class UnivariateProducerBindings {
     return result;
   }
 
-  public static String getProvides( UnivariateStatsValueProducer producer ) {
-    if ( producer instanceof UnivariateStatsValueCalculator ) {
-      return producer.getClass().getAnnotation( UnivariateValueCalculatorPlugin.class ).provides();
+  public static String getProvides( Class<? extends UnivariateStatsValueProducer> producer ) {
+    if ( UnivariateStatsValueCalculator.class.isAssignableFrom( producer ) ) {
+      return producer.getAnnotation( UnivariateValueCalculatorPlugin.class ).provides();
     } else {
       return null;
     }

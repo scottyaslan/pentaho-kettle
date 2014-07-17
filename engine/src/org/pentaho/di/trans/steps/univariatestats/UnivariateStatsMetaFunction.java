@@ -338,10 +338,11 @@ public class UnivariateStatsMetaFunction implements Cloneable {
   @Override
   public Object clone() {
     try {
-      UnivariateStatsMetaFunction retval = (UnivariateStatsMetaFunction) super.clone();
-
+      String xml = getXML();
+      UnivariateStatsMetaFunction retval =
+          new UnivariateStatsMetaFunction( XMLHandler.getSubNode( XMLHandler.loadXMLString( xml ), XML_TAG ), null, null );
       return retval;
-    } catch ( CloneNotSupportedException e ) {
+    } catch ( KettleXMLException e ) {
       return null;
     }
   }

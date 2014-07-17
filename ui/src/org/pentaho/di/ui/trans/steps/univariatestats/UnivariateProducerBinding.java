@@ -25,23 +25,25 @@ import org.pentaho.di.trans.steps.univariatestats.stats.UnivariateValueProcessor
 import org.pentaho.di.ui.core.widget.ColumnInfo;
 
 public class UnivariateProducerBinding {
-  private final List<UnivariateStatsValueProducer> producers;
-  private final Set<Class<?>> producerClasses;
+  private final List<Class<? extends UnivariateStatsValueProducer>> producerClassList;
+  private final Set<Class<?>> producerClassSet;
   private List<ColumnInfo> columnInfos;
   private List<String> parameterList;
+  private String trueVal;
+  private String falseVal;
 
   public UnivariateProducerBinding() {
-    producers = new ArrayList<UnivariateStatsValueProducer>();
-    producerClasses = new HashSet<Class<?>>();
-    for ( UnivariateStatsValueProducer producer : producers ) {
-      producerClasses.add( producer.getClass() );
+    producerClassList = new ArrayList<Class<? extends UnivariateStatsValueProducer>>();
+    producerClassSet = new HashSet<Class<?>>();
+    for ( Class<? extends UnivariateStatsValueProducer> producer : producerClassList ) {
+      producerClassSet.add( producer );
     }
     columnInfos = null;
   }
 
-  public void addProducer( UnivariateStatsValueProducer producer ) {
-    this.producers.add( producer );
-    producerClasses.add( producer.getClass() );
+  public void addProducerClass( Class<? extends UnivariateStatsValueProducer> producerClass ) {
+    this.producerClassList.add( producerClass );
+    producerClassSet.add( producerClass );
     columnInfos = null;
   }
 
@@ -50,17 +52,18 @@ public class UnivariateProducerBinding {
     return Collections.unmodifiableList( columnInfos );
   }
 
-  private UnivariateStatsValueProducer findProducer( TableItem item, int offset ) {
-    if ( producers.size() > 0 ) {
+  private Class<? extends UnivariateStatsValueProducer> findProducerClass( TableItem item, int offset ) {
+    init();
+    if ( producerClassList.size() > 0 ) {
       String firstVal = item.getText( offset );
-      if ( producers.size() == 1 ) {
-        if ( "True".equalsIgnoreCase( firstVal ) ) {
-          return producers.get( 0 );
+      if ( producerClassList.size() == 1 ) {
+        if ( trueVal.equalsIgnoreCase( firstVal ) ) {
+          return producerClassList.get( 0 );
         }
       } else {
-        for ( UnivariateStatsValueProducer producer : producers ) {
-          if ( getName( producer ).equals( firstVal ) ) {
-            return producer;
+        for ( Class<? extends UnivariateStatsValueProducer> producerClass : producerClassList ) {
+          if ( getName( producerClass ).equals( firstVal ) ) {
+            return producerClass;
           }
         }
       }
@@ -69,16 +72,17 @@ public class UnivariateProducerBinding {
   }
 
   public void setProducers( List<UnivariateStatsValueProducer> producers, TableItem item, int offset ) {
+    init();
     for ( UnivariateStatsValueProducer producer : producers ) {
-      if ( producerClasses.contains( producer.getClass() ) ) {
+      if ( producerClassSet.contains( producer.getClass() ) ) {
         int index = offset;
-        if ( this.producers.size() > 1 ) {
-          item.setText( index++, BaseMessages.getString( producer.getClass(), getName( producer ) ) );
+        if ( this.producerClassList.size() > 1 ) {
+          item.setText( index++, getName( producer.getClass() ) );
         } else {
-          item.setText( index++, "True" );
+          item.setText( index++, trueVal );
         }
         Map<String, Object> parameters = producer.getParameters();
-        Map<String, Integer> parameterTypes = getParameters( producer );
+        Map<String, Integer> parameterTypes = getParameters( producer.getClass() );
         for ( String parameter : parameterList ) {
           Object value = parameters.get( parameter );
           String strValue = null;
@@ -100,10 +104,15 @@ public class UnivariateProducerBinding {
         return;
       }
     }
+    if ( this.producerClassList.size() == 1 ) {
+      item.setText( offset, falseVal );
+    } else {
+      item.setText( offset, "" );
+    }
   }
 
   public UnivariateStatsValueProducer getProducer( TableItem item, int offset ) {
-    UnivariateStatsValueProducer producer = findProducer( item, offset );
+    Class<? extends UnivariateStatsValueProducer> producer = findProducerClass( item, offset );
     if ( producer != null ) {
       int index = offset + 1;
       Map<String, Integer> parameterTypes = getParameters( producer );
@@ -112,49 +121,62 @@ public class UnivariateProducerBinding {
         String currentParameter = parameterList.get( i );
         Integer type = parameterTypes.get( currentParameter );
         if ( type != null ) {
-          if ( type == ValueMetaInterface.TYPE_BOOLEAN ) {
-            parameters.put( currentParameter, "True".equalsIgnoreCase( item.getText( index ) ) );
-          } else {
-            try {
-              parameters.put( currentParameter, ValueMetaFactory.createValueMeta( type ).convertDataCompatible(
-                  ValueMetaFactory.createValueMeta( ValueMetaInterface.TYPE_STRING ), item.getText( index ) ) );
-            } catch ( KettleException e ) {
-              // TODO Auto-generated catch block
-              e.printStackTrace();
-            }
+          try {
+            parameters.put( currentParameter, ValueMetaFactory.createValueMeta( type ).convertDataCompatible(
+                ValueMetaFactory.createValueMeta( ValueMetaInterface.TYPE_STRING ), item.getText( index ) ) );
+          } catch ( KettleException e ) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
           }
         }
         index++;
       }
-      producer.setParameters( parameters );
+      UnivariateStatsValueProducer result = null;
+      try {
+        result = producer.newInstance();
+        result.setParameters( parameters );
+      } catch ( Exception e ) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      return result;
     }
-    return producer;
+    return null;
   }
 
   private void init() {
     if ( columnInfos == null ) {
+      ValueMetaInterface booleanValueMeta;
+      try {
+        booleanValueMeta = ValueMetaFactory.createValueMeta( ValueMetaInterface.TYPE_BOOLEAN );
+        trueVal = booleanValueMeta.getString( true );
+        falseVal = booleanValueMeta.getString( false );
+      } catch ( KettleException e ) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      String[] trueOrFalse = new String[] { trueVal, falseVal };
       List<ColumnInfo> columnInfos = new ArrayList<ColumnInfo>();
       List<String> parameterList = new ArrayList<String>();
-      if ( producers.size() > 0 ) {
-        if ( producers.size() == 1 ) {
-          UnivariateStatsValueProducer producer = producers.get( 0 );
-          columnInfos.add( new ColumnInfo( BaseMessages.getString( producer.getClass(), getName( producer ) ),
-              ColumnInfo.COLUMN_TYPE_CCOMBO, new String[] { "True", "False" }, true ) );
+      if ( producerClassList.size() > 0 ) {
+        if ( producerClassList.size() == 1 ) {
+          Class<? extends UnivariateStatsValueProducer> producer = producerClassList.get( 0 );
+          columnInfos.add( new ColumnInfo( getName( producer ), ColumnInfo.COLUMN_TYPE_CCOMBO, trueOrFalse, true ) );
         } else {
           List<String> options = new ArrayList<String>();
           options.add( "" );
-          for ( UnivariateStatsValueProducer producer : producers ) {
-            options.add( BaseMessages.getString( producer.getClass(), getName( producer ) ) );
+          for ( Class<? extends UnivariateStatsValueProducer> producer : producerClassList ) {
+            options.add( getName( producer ) );
           }
-          UnivariateStatsValueProducer producer = producers.get( 0 );
-          columnInfos.add( new ColumnInfo( BaseMessages.getString( producer.getClass(), UnivariateProducerBindings
+          Class<? extends UnivariateStatsValueProducer> producer = producerClassList.get( 0 );
+          columnInfos.add( new ColumnInfo( BaseMessages.getString( producer, UnivariateProducerBindings
               .getProvides( producer ) ), ColumnInfo.COLUMN_TYPE_CCOMBO, options.toArray( new String[options.size()] ),
               true ) );
         }
         Set<String> parameters = new HashSet<String>();
         Map<String, Set<Integer>> typeMap = new HashMap<String, Set<Integer>>();
         Map<String, String> parameterNames = new HashMap<String, String>();
-        for ( UnivariateStatsValueProducer producer : producers ) {
+        for ( Class<? extends UnivariateStatsValueProducer> producer : producerClassList ) {
           Map<String, Integer> parameterTypes = getParameters( producer );
           parameters.addAll( parameterTypes.keySet() );
           for ( Entry<String, Integer> entry : parameterTypes.entrySet() ) {
@@ -164,7 +186,7 @@ public class UnivariateProducerBinding {
               typeMap.put( entry.getKey(), types );
             }
             types.add( entry.getValue() );
-            parameterNames.put( entry.getKey(), BaseMessages.getString( producer.getClass(), entry.getKey() ) );
+            parameterNames.put( entry.getKey(), BaseMessages.getString( producer, entry.getKey() ) );
           }
         }
         if ( parameters.size() > 0 ) {
@@ -174,7 +196,7 @@ public class UnivariateProducerBinding {
             Set<Integer> types = typeMap.get( parameter );
             if ( types.size() == 1 && types.contains( ValueMetaInterface.TYPE_BOOLEAN ) ) {
               columnInfos.add( new ColumnInfo( parameterNames.get( parameter ), ColumnInfo.COLUMN_TYPE_CCOMBO,
-                  new String[] { "True", "False" }, true ) );
+                  trueOrFalse, true ) );
             } else {
               columnInfos.add( new ColumnInfo( parameterNames.get( parameter ), ColumnInfo.COLUMN_TYPE_TEXT, false ) );
             }
@@ -186,18 +208,18 @@ public class UnivariateProducerBinding {
     }
   }
 
-  private Map<String, Integer> getParameters( UnivariateStatsValueProducer producer ) {
+  private Map<String, Integer> getParameters( Class<? extends UnivariateStatsValueProducer> producer ) {
     Map<String, Integer> result = new HashMap<String, Integer>();
-    if ( producer instanceof UnivariateStatsValueProcessor ) {
+    if ( UnivariateStatsValueProcessor.class.isAssignableFrom( producer ) ) {
       UnivariateValueProcessorPlugin univariateValueProcessorPlugin =
-          producer.getClass().getAnnotation( UnivariateValueProcessorPlugin.class );
+          producer.getAnnotation( UnivariateValueProcessorPlugin.class );
       for ( int i = 0; i < univariateValueProcessorPlugin.parameterNames().length; i++ ) {
         result.put( univariateValueProcessorPlugin.parameterNames()[i],
             univariateValueProcessorPlugin.parameterTypes()[i] );
       }
-    } else if ( producer instanceof UnivariateStatsValueCalculator ) {
+    } else if ( UnivariateStatsValueCalculator.class.isAssignableFrom( producer ) ) {
       UnivariateValueCalculatorPlugin univariateValueCalculatorPlugin =
-          producer.getClass().getAnnotation( UnivariateValueCalculatorPlugin.class );
+          producer.getAnnotation( UnivariateValueCalculatorPlugin.class );
       for ( int i = 0; i < univariateValueCalculatorPlugin.parameterNames().length; i++ ) {
         result.put( univariateValueCalculatorPlugin.parameterNames()[i], univariateValueCalculatorPlugin
             .parameterTypes()[i] );
@@ -206,13 +228,16 @@ public class UnivariateProducerBinding {
     return result;
   }
 
-  private String getName( UnivariateStatsValueProducer producer ) {
-    if ( producer instanceof UnivariateStatsValueProcessor ) {
-      return producer.getClass().getAnnotation( UnivariateValueProcessorPlugin.class ).name();
-    } else if ( producer instanceof UnivariateStatsValueCalculator ) {
-      return producer.getClass().getAnnotation( UnivariateValueCalculatorPlugin.class ).name();
-    } else {
-      return null;
+  private String getName( Class<? extends UnivariateStatsValueProducer> producer ) {
+    String result = null;
+    if ( UnivariateStatsValueProcessor.class.isAssignableFrom( producer ) ) {
+      result = producer.getAnnotation( UnivariateValueProcessorPlugin.class ).name();
+    } else if ( UnivariateStatsValueCalculator.class.isAssignableFrom( producer ) ) {
+      result = producer.getAnnotation( UnivariateValueCalculatorPlugin.class ).name();
     }
+    if ( result != null ) {
+      return BaseMessages.getString( producer, result );
+    }
+    return result;
   }
 }

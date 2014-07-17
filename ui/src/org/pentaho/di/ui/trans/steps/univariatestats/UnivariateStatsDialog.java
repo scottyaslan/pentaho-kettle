@@ -377,22 +377,6 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
         TableItem item = m_wFields.table.getItem( i );
         UnivariateStatsMetaFunction fn = m_currentMeta.getInputFieldMetaFunctions()[i];
         bindings.setUpTable( fn.getRequestedValues(), item );
-       /* TableItem item = m_wFields.table.getItem( i );
-
-        item.setText( 1, Const.NVL( fn.getSourceFieldName(), "" ) );
-        item.setText( 2, Const.NVL( ( fn.getCalcN() ) ? "True" : "False", "" ) );
-        item.setText( 3, Const.NVL( ( fn.getCalcMean() ) ? "True" : "False", "" ) );
-        item.setText( 4, Const.NVL( ( fn.getCalcStdDev() ) ? "True" : "False", "" ) );
-        item.setText( 5, Const.NVL( ( fn.getCalcMin() ) ? "True" : "False", "" ) );
-        item.setText( 6, Const.NVL( ( fn.getCalcMax() ) ? "True" : "False", "" ) );
-        item.setText( 7, Const.NVL( ( fn.getCalcMedian() ) ? "True" : "False", "" ) );
-        double p = fn.getCalcPercentile(a);
-        NumberFormat pF = NumberFormat.getInstance();
-        pF.setMaximumFractionDigits( 2 );
-        String res = ( p < 0 ) ? "" : pF.format( p * 100 );
-        item.setText( 8, Const.NVL( res, "" ) );
-
-        item.setText( 9, Const.NVL( ( fn.getInterpolatePercentile() ) ? "True" : "False", "" ) );*/
       }
 
       m_wFields.setRowNums();
@@ -423,28 +407,6 @@ public class UnivariateStatsDialog extends BaseStepDialog implements StepDialogI
       TableItem item = m_wFields.getNonEmpty( i );
 
       String inputFieldName = item.getText( 1 );
-      boolean n = item.getText( 2 ).equalsIgnoreCase( "True" );
-      boolean mean = item.getText( 3 ).equalsIgnoreCase( "True" );
-      boolean stdDev = item.getText( 4 ).equalsIgnoreCase( "True" );
-      boolean min = item.getText( 5 ).equalsIgnoreCase( "True" );
-      boolean max = item.getText( 6 ).equalsIgnoreCase( "True" );
-      boolean median = item.getText( 7 ).equalsIgnoreCase( "True" );
-      String percentileS = item.getText( 8 );
-      double percentile = -1;
-      if ( percentileS.length() > 0 ) {
-        // try to parse percentile
-        try {
-          percentile = Double.parseDouble( percentileS );
-          if ( percentile < 0 ) {
-            percentile = -1;
-          } else if ( percentile > 1 && percentile <= 100 ) {
-            percentile /= 100;
-          }
-        } catch ( Exception ex ) {
-          // Ignore errors
-        }
-      }
-      boolean interpolate = item.getText( 9 ).equalsIgnoreCase( "True" );
 
       // CHECKSTYLE:Indentation:OFF
       m_currentMeta.getInputFieldMetaFunctions()[i] = new UnivariateStatsMetaFunction( inputFieldName );
