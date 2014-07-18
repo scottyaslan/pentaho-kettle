@@ -13,7 +13,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.SumValueProcessor;
 
-public class SumValueProcessorTest extends AbstractProcessorTest {
+public class SumValueProcessorTest extends AbstractProcessorTestBase {
 
   @Override
   protected Object getExpectedValue( ValueMetaInterface vmi, List<Object> sourceList ) {

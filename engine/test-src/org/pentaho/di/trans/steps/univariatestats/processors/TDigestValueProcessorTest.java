@@ -17,7 +17,7 @@ import org.pentaho.di.trans.steps.univariatestats.stats.processors.TDigestValueP
 
 import com.clearspring.analytics.stream.quantile.TDigest;
 
-public class TDigestValueProcessorTest extends AbstractProcessorTest {
+public class TDigestValueProcessorTest extends AbstractProcessorTestBase {
 
   @Override
   protected Object getExpectedValue( ValueMetaInterface vmi, List<Object> sourceList ) {

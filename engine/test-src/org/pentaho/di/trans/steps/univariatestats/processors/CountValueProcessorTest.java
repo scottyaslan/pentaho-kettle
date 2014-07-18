@@ -12,7 +12,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.CountValueProcessor;
 
-public class CountValueProcessorTest extends AbstractProcessorTest {
+public class CountValueProcessorTest extends AbstractProcessorTestBase {
 
   @Override
   protected Object getExpectedValue( ValueMetaInterface vmi, List<Object> sourceList ) {

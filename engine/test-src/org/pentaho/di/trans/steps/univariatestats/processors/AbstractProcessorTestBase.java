@@ -16,7 +16,7 @@ import org.pentaho.di.core.row.value.ValueMetaFactory;
 import org.pentaho.di.core.row.value.ValueMetaPluginType;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
 
-public abstract class AbstractProcessorTest {
+public abstract class AbstractProcessorTestBase {
   protected abstract Object getExpectedValue( ValueMetaInterface vmi, List<Object> sourceList );
 
   protected abstract UnivariateStatsValueProcessor getProcessor();

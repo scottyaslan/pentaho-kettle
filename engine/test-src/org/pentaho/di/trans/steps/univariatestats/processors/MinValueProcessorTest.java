@@ -13,7 +13,7 @@ import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
 import org.pentaho.di.trans.steps.univariatestats.stats.processors.MinValueProcessor;
 
-public class MinValueProcessorTest extends AbstractProcessorTest {
+public class MinValueProcessorTest extends AbstractProcessorTestBase {
   @Override
   protected UnivariateStatsValueProcessor getProcessor() {
     return new MinValueProcessor();
