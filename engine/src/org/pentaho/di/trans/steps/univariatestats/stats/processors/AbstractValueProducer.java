@@ -56,6 +56,11 @@ public abstract class AbstractValueProducer implements UnivariateStatsValueProdu
   }
 
   @Override
+  public String getOrigin() {
+    return origin;
+  }
+
+  @Override
   public void setParameters( Map<String, Object> parameters ) {
     // noop default
   }

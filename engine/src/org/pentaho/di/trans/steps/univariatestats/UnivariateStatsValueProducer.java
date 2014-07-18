@@ -22,13 +22,16 @@ public interface UnivariateStatsValueProducer {
 
   public void setOrigin( String origin );
 
+  public String getOrigin();
+
   public void setParameters( Map<String, Object> parameters );
 
-  public Map<String, Object> getParameters( );
+  public Map<String, Object> getParameters();
 
   public String getXml();
 
-  public void loadXML( Node producerNode, List<DatabaseMeta> databases, IMetaStore metaStore ) throws KettleXMLException;
+  public void loadXML( Node producerNode, List<DatabaseMeta> databases, IMetaStore metaStore )
+    throws KettleXMLException;
 
   public void saveRep( Repository rep, IMetaStore metaStore, ObjectId id_transformation, ObjectId id_step, int nr,
       String prefix ) throws KettleException;

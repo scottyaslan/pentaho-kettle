@@ -7,27 +7,26 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.core.row.value.ValueMetaFactory;
-import org.pentaho.di.core.row.value.ValueMetaPluginType;
 import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProcessor;
+import org.pentaho.di.trans.steps.univariatestats.UnivariateStatsValueProducer;
+import org.pentaho.di.trans.steps.univariatestats.calculators.AbstractProducerTestBase;
 
-public abstract class AbstractProcessorTestBase {
+public abstract class AbstractProcessorTestBase extends AbstractProducerTestBase {
   protected abstract Object getExpectedValue( ValueMetaInterface vmi, List<Object> sourceList );
 
   protected abstract UnivariateStatsValueProcessor getProcessor();
 
-  protected void validate( UnivariateStatsValueProcessor processor, ValueMetaInterface vmi, List<Object> sourceList ) {
-    assertEquals( getExpectedValue( vmi, sourceList ), processor.getValue() );
+  @Override
+  protected UnivariateStatsValueProducer getProducer() {
+    return getProcessor();
   }
 
-  @BeforeClass
-  public static void beforeClass() throws KettlePluginException {
-    ValueMetaPluginType.getInstance().searchPlugins();
+  protected void validate( UnivariateStatsValueProcessor processor, ValueMetaInterface vmi, List<Object> sourceList ) {
+    assertEquals( getExpectedValue( vmi, sourceList ), processor.getValue() );
   }
 
   private void testList( List<Double> sourceList ) throws KettleException {

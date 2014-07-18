@@ -25,8 +25,7 @@ import org.w3c.dom.Node;
 import com.clearspring.analytics.stream.quantile.TDigest;
 
 @UnivariateValueCalculatorPlugin( id = TDigestQuantileValueCalculator.ID, name = TDigestQuantileValueCalculator.NAME,
-    requiredProcessors = { TDigestValueProcessor.ID },
-    parameterNames = { PercentileValueCalculator.PERCENTILE_NAME },
+    requiredProcessors = { TDigestValueProcessor.ID }, parameterNames = { PercentileValueCalculator.PERCENTILE_NAME },
     parameterTypes = { PercentileValueCalculator.PERCENTILE_TYPE }, provides = PercentileValueCalculator.PROVIDES )
 public class TDigestQuantileValueCalculator extends AbstractValueProducer implements UnivariateStatsValueCalculator {
   public static final String ID = "T_DIGEST_PERCENTILE_VALUE_CALCULATOR";
@@ -49,6 +48,11 @@ public class TDigestQuantileValueCalculator extends AbstractValueProducer implem
     KettlePluginException {
     UnivariateStatsValueProducer tdigestProcessor = producerMap.get( TDigestValueProcessor.ID );
     quantileResult = ( (TDigest) ( tdigestProcessor.getValue() ) ).quantile( percentile );
+  }
+
+  @Override
+  public String getName() {
+    return PercentileValueCalculator.getName( percentile );
   }
 
   @Override

@@ -2,6 +2,8 @@ package org.pentaho.di.trans.steps.univariatestats.processors;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,18 @@ public class TDigestValueProcessorTest extends AbstractProcessorTestBase {
   @Override
   protected Object getExpectedValue( ValueMetaInterface vmi, List<Object> sourceList ) {
     return null;
+  }
+
+  private Map<String, Object> createParameterMap( Double compression ) {
+    Map<String, Object> result = new HashMap<String, Object>();
+    result.put( TDigestValueProcessor.COMPRESSION_NAME, compression );
+    return result;
+  }
+
+  @SuppressWarnings( "unchecked" )
+  @Override
+  protected List<Map<String, Object>> getRoundTripParameters() {
+    return new ArrayList<Map<String, Object>>( Arrays.asList( createParameterMap( -1.0 ), createParameterMap( 100.0 ) ) );
   }
 
   @Override
@@ -50,7 +64,6 @@ public class TDigestValueProcessorTest extends AbstractProcessorTestBase {
     return result;
   }
 
-
   @Test
   public void testGetValueMeta() throws KettlePluginException {
     TDigestValueProcessor tdigestValueProcessor = new TDigestValueProcessor();
@@ -58,7 +71,7 @@ public class TDigestValueProcessorTest extends AbstractProcessorTestBase {
     tdigestValueProcessor.setOrigin( origin );
     ValueMetaInterface vmi = tdigestValueProcessor.getOutputValueMeta();
     assertEquals( ValueMetaInterface.TYPE_NONE, vmi.getType() );
-    assertEquals( origin + "(" + BaseMessages.getString( TDigestValueProcessor.class, TDigestValueProcessor.NAME ) + ")",
-        vmi.getName() );
+    assertEquals( origin + "(" + BaseMessages.getString( TDigestValueProcessor.class, TDigestValueProcessor.NAME )
+        + ")", vmi.getName() );
   }
 }
