@@ -23,13 +23,18 @@
 package org.pentaho.di.core;
 
 import java.io.File;
+import java.util.Hashtable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.pentaho.di.core.exception.KettleException;
 
 public class JndiUtil {
+  private static final AtomicBoolean USE_SIMPLE_JNDI = new AtomicBoolean( false );
+  private static String path = null;
 
   public static void initJNDI() throws KettleException {
-    String path = Const.JNDI_DIRECTORY;
+    USE_SIMPLE_JNDI.set( true );
+    path = Const.JNDI_DIRECTORY;
 
     if ( path == null || path.equals( "" ) ) {
       try {
@@ -40,10 +45,15 @@ public class JndiUtil {
       }
       Const.JNDI_DIRECTORY = path;
     }
-
-    System.setProperty( "java.naming.factory.initial", "org.osjava.sj.SimpleContextFactory" );
-    System.setProperty( "org.osjava.sj.root", path );
-    System.setProperty( "org.osjava.sj.delimiter", "/" );
   }
 
+  public static Hashtable<String, String> getJndiEnv() {
+    Hashtable<String, String> env = new Hashtable<String, String>();
+    if ( USE_SIMPLE_JNDI.get() ) {
+      env.put( "java.naming.factory.initial", "org.osjava.sj.SimpleContextFactory" );
+      env.put( "org.osjava.sj.root", path );
+      env.put( "org.osjava.sj.delimiter", "/" );
+    }
+    return env;
+  }
 }

@@ -30,9 +30,11 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.pentaho.di.core.JndiUtil;
 import org.pentaho.di.core.database.DataSourceNamingException;
 import org.pentaho.di.core.database.DataSourceProviderInterface;
 import org.pentaho.di.core.database.Database;
+import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.i18n.BaseMessages;
 
 /**
@@ -74,7 +76,7 @@ public class DatabaseUtil implements DataSourceProviderInterface {
     if ( foundDs != null ) {
       return (DataSource) foundDs;
     }
-    InitialContext ctx = new InitialContext();
+    InitialContext ctx = new InitialContext( JndiUtil.getJndiEnv() );
     Object lkup = null;
     DataSource rtn = null;
     NamingException firstNe = null;
