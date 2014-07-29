@@ -44,7 +44,7 @@
         <artifact name="kettle5-log4j-plugin" type="zip"/>
     </dependency>
     <dependency org="pentaho" name="pentaho-kettle-karaf-plugin-package" rev="${project.revision}" changing="true" conf="plugins->default">
-        <artifact name="pentaho-kettle-karaf-plugin" type="zip"/>
+        <artifact name="pentaho-kettle-karaf-plugin-package" type="zip"/>
     </dependency>
     
     <!-- Pentaho dependencies (non-Kettle), launcher, shim, etc. -->
