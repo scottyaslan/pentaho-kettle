@@ -22,6 +22,8 @@
 
 package org.pentaho.di.core.plugins;
 
+import org.pentaho.di.core.exception.KettlePluginException;
+
 /**
  *
  * Plugins implementing this type will be asked to load classes instead of having it handled by the PluginRegistry.
@@ -29,7 +31,7 @@ package org.pentaho.di.core.plugins;
  * User: nbaker Date: 12/12/10
  */
 public interface ClassLoadingPluginInterface {
-  <T> T loadClass( Class<T> pluginClass );
+  <T> T loadClass( Class<T> pluginClass ) throws KettlePluginException;
 
   ClassLoader getClassLoader();
 }
