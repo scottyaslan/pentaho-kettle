@@ -43,7 +43,7 @@
     <dependency org="${ivy.artifact.group}" name="kettle5-log4j-plugin" rev="${dependency.kettle.plugin.revision}" changing="true" conf="plugins->default">
         <artifact name="kettle5-log4j-plugin" type="zip"/>
     </dependency>
-    <dependency org="pentaho" name="pentaho-kettle-karaf-plugin" rev="${project.revision}" changing="true" conf="plugins->default">
+    <dependency org="pentaho" name="pentaho-kettle-karaf-plugin-package" rev="${project.revision}" changing="true" conf="plugins->default">
         <artifact name="pentaho-kettle-karaf-plugin" type="zip"/>
     </dependency>
     
