@@ -954,7 +954,7 @@ public class PluginRegistry {
               } else {
                 ucl = classLoaders.get( plugin );
                 if ( ucl == null ) {
-                  if ( plugin.getLibraries().size() == 0 ) {
+                  if ( plugin.getLibraries() == null || plugin.getLibraries().size() == 0 ) {
                     if ( plugin instanceof ClassLoadingPluginInterface ) {
                       return ( (ClassLoadingPluginInterface) plugin ).getClassLoader();
                     }
