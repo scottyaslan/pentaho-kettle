@@ -91,7 +91,7 @@ public class BaseStepTest {
     when( stepPartitioningMeta.getPartition( rowMeta1, objects1 ) ).thenReturn( 1 );
 
     BlockingRowSet[] rowSet = { new BlockingRowSet( 2 ), new BlockingRowSet( 2 ), new BlockingRowSet( 2 ), new BlockingRowSet( 2 ) };
-    List<RowSet> outputRowSets = new ArrayList<>();
+    List<RowSet> outputRowSets = new ArrayList<RowSet>();
     outputRowSets.addAll( Arrays.asList( rowSet ) );
 
     BaseStep baseStep =
