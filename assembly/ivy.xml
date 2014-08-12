@@ -43,8 +43,8 @@
     <dependency org="${ivy.artifact.group}" name="kettle5-log4j-plugin" rev="${dependency.kettle.plugin.revision}" changing="true" conf="plugins->default">
         <artifact name="kettle5-log4j-plugin" type="zip"/>
     </dependency>
-    <dependency org="pentaho" name="pentaho-kettle-karaf-plugin-package" rev="${project.revision}" changing="true" conf="plugins->default">
-        <artifact name="pentaho-kettle-karaf-plugin-package" type="zip"/>
+    <dependency org="pentaho" name="pdi-osgi-bridge" rev="${dependency.kettle.plugin.revision}" changing="true" conf="plugins->default">
+        <artifact name="pdi-osgi-bridge-package" type="zip"/>
     </dependency>
     
     <!-- Pentaho dependencies (non-Kettle), launcher, shim, etc. -->
@@ -52,9 +52,6 @@
     <dependency org="pentaho"               name="pentaho-hadoop-hive-jdbc-shim" rev="${dependency.pentaho-hadoop-hive-jdbc-shim.revision}"/>
     <dependency org="pentaho" name="pentaho-big-data-plugin" rev="${dependency.pentaho-big-data-plugin.revision}" changing="true" transitive="false" conf="plugins->default">
       <artifact name="pentaho-big-data-plugin" type="zip"/>
-    </dependency>
-    <dependency org="pentaho" name="pentaho-mongodb-plugin" rev="${dependency.pentaho-mongodb-plugin.revision}" changing="true" transitive="false" conf="plugins->default">
-      <artifact name="pentaho-mongodb-plugin" type="zip"/>
     </dependency>
     <dependency org="pentaho" name="pentaho-cassandra-plugin" rev="${dependency.pentaho-cassandra-plugin.revision}" changing="true" transitive="false" conf="plugins->default">
       <artifact name="pentaho-cassandra-plugin" type="zip"/>

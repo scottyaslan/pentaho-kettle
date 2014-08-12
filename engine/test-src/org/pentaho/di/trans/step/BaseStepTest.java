@@ -50,7 +50,7 @@ public class BaseStepTest {
    */
   @Test
   public void testBaseStepPutRowLocalSpecialPartitioning() throws KettleException {
-    List<StepMeta> stepMetas = new ArrayList<>();
+    List<StepMeta> stepMetas = new ArrayList<StepMeta>();
     stepMetas.add( mockHelper.stepMeta );
     stepMetas.add( mockHelper.stepMeta );
     StepPartitioningMeta stepPartitioningMeta = spy( new StepPartitioningMeta() );
