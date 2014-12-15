@@ -95,6 +95,7 @@ import org.pentaho.di.core.Props;
 import org.pentaho.di.core.dnd.DragAndDropContainer;
 import org.pentaho.di.core.dnd.XMLTransfer;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.extension.ExtensionPointHandler;
@@ -174,6 +175,9 @@ import org.pentaho.di.ui.spoon.AbstractGraph;
 import org.pentaho.di.ui.spoon.SWTGC;
 import org.pentaho.di.ui.spoon.Spoon;
 import org.pentaho.di.ui.spoon.SpoonPluginManager;
+import org.pentaho.di.ui.spoon.SpoonUiExtenderPlugin;
+import org.pentaho.di.ui.spoon.SpoonUiExtenderPluginInterface;
+import org.pentaho.di.ui.spoon.SpoonUiExtenderPluginType;
 import org.pentaho.di.ui.spoon.SwtScrollBar;
 import org.pentaho.di.ui.spoon.TabItemInterface;
 import org.pentaho.di.ui.spoon.XulSpoonResourceBundle;
@@ -3692,6 +3696,13 @@ public class TransGraph extends AbstractGraph implements XulEventHandler, Redraw
     transPerfDelegate.addTransPerf();
     transMetricsDelegate.addTransMetrics();
     transPreviewDelegate.addTransPreview();
+
+    List<SpoonUiExtenderPluginInterface> relevantExtenders =
+      SpoonUiExtenderPluginType.getInstance().getRelevantExtenders( TransGraph.class, "loadTab" );
+
+    for (SpoonUiExtenderPluginInterface relevantExtender : relevantExtenders){
+      relevantExtender.uiEvent( this, "loadTab" );
+    }
 
     if ( tabItemSelection != null ) {
       extraViewTabFolder.setSelection( tabItemSelection );
