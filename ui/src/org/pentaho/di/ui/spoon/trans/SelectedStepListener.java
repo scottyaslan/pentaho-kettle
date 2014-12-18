@@ -19,15 +19,14 @@
  * limitations under the License.
  *
  ******************************************************************************/
+package org.pentaho.di.ui.spoon.trans;
 
-package org.pentaho.di.ui.spoon;
+import org.pentaho.di.trans.step.StepMeta;
 
-import java.util.Set;
-import java.util.Map;
+/**
+ * Created by saslan on 12/18/2014.
+ */
+public interface SelectedStepListener {
 
-public interface SpoonUiExtenderPluginInterface {
-
-  public Map<Class<?>, Set<String>> respondsTo();
-
-  public void uiEvent( Object subject, String event );
+  public void onSelect( StepMeta selectedStep );
 }
