@@ -221,6 +221,8 @@ public class TransGraph extends AbstractGraph implements XulEventHandler, Redraw
 
   private static final String XUL_FILE_TRANS_TOOLBAR = "ui/trans-toolbar.xul";
 
+  private static final String LOAD_TAB = "loadTab";
+
   public static final String START_TEXT = BaseMessages.getString( PKG, "TransLog.Button.StartTransformation" );
 
   public static final String PAUSE_TEXT = BaseMessages.getString( PKG, "TransLog.Button.PauseTransformation" );
@@ -882,7 +884,9 @@ public class TransGraph extends AbstractGraph implements XulEventHandler, Redraw
                 transPreviewDelegate.setSelectedStep( currentStep );
 
                 for ( SelectedStepListener stepListener : stepListeners ) {
-                  stepListener.onSelect( currentStep );
+                  if ( this.extraViewComposite != null && !this.extraViewComposite.isDisposed() ) {
+                    stepListener.onSelect( currentStep );
+                  }
                 }
 
                 transPreviewDelegate.refreshView();
@@ -3711,10 +3715,10 @@ public class TransGraph extends AbstractGraph implements XulEventHandler, Redraw
     transPreviewDelegate.addTransPreview();
 
     List<SpoonUiExtenderPluginInterface> relevantExtenders =
-      SpoonUiExtenderPluginType.getInstance().getRelevantExtenders( TransGraph.class, "loadTab" );
+      SpoonUiExtenderPluginType.getInstance().getRelevantExtenders( TransGraph.class, LOAD_TAB );
 
     for ( SpoonUiExtenderPluginInterface relevantExtender : relevantExtenders ) {
-      relevantExtender.uiEvent( this, "loadTab" );
+      relevantExtender.uiEvent( this, LOAD_TAB );
     }
 
     if ( tabItemSelection != null ) {
